@@ -41,10 +41,10 @@ echo ""
 echo "============ CREATING SkyNet Docker Container ============="
 echo $PWD
 
-docker run -d -v ./ORBSlam2:/ws/ORBSlam2 \
-            -v ./AKAZESlam:/ws/AKAZESlam \
-            -v ./SkyNet:/ws/SkyNet \
-            -v ./build.sh:/ws/build.sh \
+docker run -d -v ${PWD}/ORBSlam2:/ws/ORBSlam2 \
+            -v ${PWD}/AKAZESlam:/ws/AKAZESlam \
+            -v ${PWD}/SkyNet:/ws/SkyNet \
+            -v ${PWD}/build.sh:/ws/build.sh \
             -e DISPLAY=$DISPLAY \
             -v XAUTHORITY=$XAUTHORITY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
