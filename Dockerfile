@@ -15,6 +15,8 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
 add-apt-repository -y "deb http://security.ubuntu.com/ubuntu xenial-security main"; \
 fi
 
+# Remove optional packages in production: sudo, usbutils, libcanberra-gtk3-module, iputils-ping
+
 # Install dependencies
 RUN apt update && \
     apt install -y --no-install-recommends software-properties-common && \
