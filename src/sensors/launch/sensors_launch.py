@@ -13,7 +13,7 @@ def generate_launch_description():
             executable='talker',
             arguments=['--ros-args', '--log-level', "INFO"],
             output='screen',
-            name='realsense_node'),
+            name='talker'),
         launch_ros.actions.Node(
             package='sensors',
             executable='listener',

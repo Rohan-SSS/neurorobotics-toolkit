@@ -107,7 +107,8 @@ class FlightLogData
     uint8_t mode;
     uint32_t date, time;
     int16_t Az, Ay, Ax; // Acceleration
-    int16_t Bz, By, Bx; // Magnetometer
+    
+	int16_t Bz, By, Bx; // Magnetometer
     int16_t R, Q, P; 
 
     int16_t dYaw;  // r // Change in Yaw(Psi) (rad/sec)

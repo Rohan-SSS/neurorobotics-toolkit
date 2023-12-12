@@ -35,16 +35,16 @@ void SimpleImuSubscriber::callback(sensor_msgs::msg::Imu::SharedPtr msg){
 }
 
 SyncedSubscriber::SyncedSubscriber(std::string node_name): Node(node_name){
-	RCLCPP_INFO(this->get_logger(), "Creating Subscriptions");
+	RCLCPP_DEBUG(this->get_logger(), "Creating Subscriptions");
 	depth.subscribe(this, "/realsense_node/Intel_RealSense_D455/camera/depth");
 	ir.subscribe(this, "/realsense_node/Intel_RealSense_D455/camera/infrared");
 	accel.subscribe(this, "/realsense_node/Intel_RealSense_D455/motion/accel");
 	gyro.subscribe(this, "/realsense_node/Intel_RealSense_D455/motion/gyro");
-	RCLCPP_INFO(this->get_logger(), "All 4 subscriptions created");
+	RCLCPP_DEBUG(this->get_logger(), "All 4 subscriptions created");
 	sync = std::make_shared<Syncer>(Policy(10), depth, ir, accel, gyro);
-	RCLCPP_INFO(this->get_logger(), "Created Syncer");
+	RCLCPP_DEBUG(this->get_logger(), "Created Syncer");
 	sync->registerCallback(std::bind(&SyncedSubscriber::callback, this, _1, _2, _3, _4));
-	RCLCPP_INFO(this->get_logger(), "Registered Callback");
+	RCLCPP_DEBUG(this->get_logger(), "Registered Callback");
 
 }
 

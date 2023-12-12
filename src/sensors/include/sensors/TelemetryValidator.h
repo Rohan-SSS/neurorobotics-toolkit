@@ -10,7 +10,10 @@
 //#include <io.h>
 #include <stdint.h>
 #include "stdio.h"
+#ifndef UTIL_CLASSES
+#define UTIL_CLASSES
 #include "sensors/UtilClasses.h"
+#endif
 #include <mutex>
 #include <string.h>
 //#include "json.h"

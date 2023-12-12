@@ -1,5 +1,8 @@
 #include "sensors/TelemetryValidator.h"
+#ifndef UTIL_CLASSES
+#define UTIL_CLASSES
 #include "sensors/UtilClasses.h"
+#endif
 #include "rclcpp/rclcpp.hpp"
 #include <string>
 #include <sys/types.h>
@@ -50,11 +53,32 @@ class UDPCommunication{
 		rclcpp::Logger LOGGER;
 };
 
+class DayGpsFileReader{
+	public:
+		DayGpsFileReader(rclcpp::Logger logger, std::function<void(FlightLogData)> cb, std::string filePath);
+		void AcquireFileData();
+		void start();
+	private:
+		void readGPSFromText(std::string &line, FlightLogData &data);
+		void Tokenize(std::string const &str, const char delim, std::vector<std::string> &out);
+		int StringVecToSensorData(std::vector<std::string>& line, FlightLogData &mCurrentGPSPosition);
+		rclcpp::Logger LOGGER;
+		
+		std::string gpsFilePath;
+		
+		std::function<void(FlightLogData)> callback;
+		std::function<void(FlightLogData)> originalCallback;
+		
+		std::thread *th;
+};
+
 class SimpleGpsPublisher: public rclcpp::Node{
 	public:
-		SimpleGpsPublisher(std::string nodeName);
-		void setup();
+		SimpleGpsPublisher(std::string nodeName, std::string type);
+		void setup(std::string type);
 		void gpsCallback(FlightLogData data);
 	private:
 		UDPCommunication* comm;
+		std::string commType;
+		DayGpsFileReader* reader;
 };

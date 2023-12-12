@@ -166,7 +166,6 @@ void UDPCommunication::testReceiver(std::string gpsDataFilePath){
 	}
 
 	std::thread* th = new std::thread(&UDPCommunication::testThreadFunc, this, gpsDataFilePath);
-	th->join();
 	RCLCPP_INFO(LOGGER, "Test Done");
 }
 
@@ -189,24 +188,108 @@ void UDPCommunication::testThreadFunc(std::string filePath){
 	}
 }
 
-SimpleGpsPublisher::SimpleGpsPublisher(std::string nodeName): rclcpp::Node(nodeName){
-	RCLCPP_INFO(this->get_logger(), "Creating Simple GPS Publisher");		
-	setup();
+
+DayGpsFileReader::DayGpsFileReader(rclcpp::Logger logger, std::function<void(FlightLogData)> cb, std::string filePath): LOGGER(logger), originalCallback(cb){
+	gpsFilePath = filePath;
+	callback = [this](FlightLogData data){
+		RCLCPP_DEBUG(LOGGER, "Inside GPS File Reader callback");
+		originalCallback(data);
+	};
 }
 
-void SimpleGpsPublisher::setup(){
+void DayGpsFileReader::start(){
+	th = new std::thread(&DayGpsFileReader::AcquireFileData, this);
+}
+
+void DayGpsFileReader::Tokenize(std::string const &str, const char delim, std::vector<std::string> &out)
+{
+	size_t start;
+	size_t end = 0;
+    out.clear();
+
+	while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
+	{
+		end = str.find(delim, start);
+		out.push_back(str.substr(start, end - start));
+	}
+}
+
+int DayGpsFileReader::StringVecToSensorData(std::vector<std::string>& line, FlightLogData &data){
+    
+    if(line.size() < 13 ){
+        return -1;
+    }
+    data.latitude = std::stod(line[0]);
+    data.longitude = std::stod(line[1]);
+    data.altitudeAGL = std::stod(line[2]);//AGL
+    data.mode = std::stoi(line[3]);
+    //mUAVSensorID
+    //mGPSChannelNumber = stoi(line[4]);
+    data.time = std::stoi(line[5]);
+    data.date = std::stoi(line[6]);
+   	data.altitudeMSL = std::stod(line[7]);
+    //mCurrentGPSSensorHDOP = stod(line[8]);
+    //mCurrentGPSSensorSpeed_inkm = stod(line[9]);
+    //mCurrentGPSSensorHeading = stod(line[10]);
+    //mCurrentGPSSatellites = stoi(line[11]);
+	//mSkyNet_UART_VPS_GPS_Channel_ID = stoi(line[12]);
+
+    return 0;
+}
+
+void DayGpsFileReader::readGPSFromText(std::string &line, FlightLogData &data){
+	std::vector<std::string> string_vec;
+	Tokenize(line, ',', string_vec);
+	if(!StringVecToSensorData(string_vec, data)){
+		RCLCPP_ERROR(LOGGER, "Error in reading data");
+	}
+}
+
+void DayGpsFileReader::AcquireFileData(){
+	std::fstream file;
+	file.open(gpsFilePath, std::ios::in);
+	RCLCPP_INFO(LOGGER, "Starting GPS File Data Acquisition Thread");
+	if(file.is_open()){
+		std::string line;
+		FlightLogData data;
+		while(getline(file, line)){
+			RCLCPP_DEBUG(LOGGER, "Read Line: " +line);
+			readGPSFromText(line, data);
+			callback(data);
+		}
+	}
+	else{
+		RCLCPP_ERROR(LOGGER, "Day Gps File not open");
+	}
+}
+
+SimpleGpsPublisher::SimpleGpsPublisher(std::string nodeName, std::string type): rclcpp::Node(nodeName){
+	RCLCPP_INFO(this->get_logger(), "Creating Simple GPS Publisher");		
+	setup(type);
+}
+
+void SimpleGpsPublisher::setup(std::string type){
+	commType = type;
+	std::string p 
+		= "/ws/SkyNet/Flight Data/23 June 2023/FLIGHT 2/Log/2023_6_15_10_53_37/day_gps.txt";
 	std::function<void(FlightLogData)> callbackFunction = [this](FlightLogData data){
 		gpsCallback(data);
 	};
-	comm = new UDPCommunication(this->get_logger(), callbackFunction);
-	comm->start();
-	std::string p = "/ws/SkyNet/Flight Data/23 June 2023/FLIGHT 2/Log/2023_6_15_10_53_37/day_gps.txt";
-	comm->testReceiver(p);
+	if(commType == "UDP"){
+		comm = new UDPCommunication(this->get_logger(), callbackFunction);
+		comm->start();
+		comm->testReceiver(p);
+	}
+	else if(commType == "DayGpsFile"){
+		RCLCPP_INFO(this->get_logger(), "Creating Day GPS file reader");
+		reader = new DayGpsFileReader(this->get_logger(), callbackFunction, p);
+		reader->start();
+	}
 }
 
 void 
 SimpleGpsPublisher::gpsCallback(FlightLogData data){
-	RCLCPP_DEBUG(this->get_logger(), "Inside Subscriber Callback");
+	RCLCPP_DEBUG(this->get_logger(), "Inside GPS Subscriber Callback");
 	RCLCPP_DEBUG(this->get_logger(), "latitude: %f", data.latitude);
 	RCLCPP_DEBUG(this->get_logger(), "longitude: %f", data.longitude);
 }
