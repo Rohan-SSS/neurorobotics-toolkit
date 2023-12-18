@@ -56,7 +56,7 @@ SimpleImagePublisher::SimpleImagePublisher(std::string nodeName): rclcpp::Node(n
 	initializeFormatsMaps();
 	_frame_publisher = rclcpp::Node::create_publisher<sensor_msgs::msg::Image>("~/frame", 10);
 
-	std::string p = "/ws/SkyNet/Flight Data/23 June 2023/FLIGHT 2/Log/2023_6_15_10_53_37/frames.avi";
+	std::string p = "/ws/SkyNet/Flight Data/good/2023_11_29_8_42_35/frames.avi";
 	RCLCPP_INFO(this->get_logger(), "Creating Video Frame Publisher");
 	std::function<void(cv::Mat)> callbackFunction = [this](cv::Mat frame){
 		frameCallback(frame);

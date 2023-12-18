@@ -20,14 +20,16 @@ find_package(OpenCV 3.0 REQUIRED)
 find_package(realsense2 REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(gps_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 # add_subdirectory(${PROJECT_SOURCE_DIR}/ext/nmealib)
 
 add_executable(talker src/publisher_member_function.cpp src/realsense.cpp src/gps.cpp src/TelemetryValidator.cpp src/video.cpp)
 add_executable(listener src/subscriber_member_function.cpp src/subscribers.cpp)
 
-ament_target_dependencies(talker rclcpp std_msgs sensor_msgs cv_bridge message_filters)
-ament_target_dependencies(listener rclcpp std_msgs sensor_msgs cv_bridge message_filters)
+ament_target_dependencies(talker rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
+ament_target_dependencies(listener rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
 
 target_include_directories(talker PUBLIC /ws/SkyNet/Sensor/include
 	PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include PUBLIC ${realsense2_INCLUDE_DIR})
@@ -55,10 +57,9 @@ endif()
 
 install(TARGETS
   talker
-  DESTINATION lib/${PROJECT_NAME})
-install(TARGETS
   listener
   DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/

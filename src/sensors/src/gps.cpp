@@ -240,9 +240,13 @@ int DayGpsFileReader::StringVecToSensorData(std::vector<std::string>& line, Flig
 void DayGpsFileReader::readGPSFromText(std::string &line, FlightLogData &data){
 	std::vector<std::string> string_vec;
 	Tokenize(line, ',', string_vec);
-	if(!StringVecToSensorData(string_vec, data)){
+	if(StringVecToSensorData(string_vec, data)){
 		RCLCPP_ERROR(LOGGER, "Error in reading data");
 	}
+	else{
+		RCLCPP_DEBUG(LOGGER, "Read Data successfully");
+	}
+
 }
 
 void DayGpsFileReader::AcquireFileData(){
@@ -265,13 +269,14 @@ void DayGpsFileReader::AcquireFileData(){
 
 SimpleGpsPublisher::SimpleGpsPublisher(std::string nodeName, std::string type): rclcpp::Node(nodeName){
 	RCLCPP_INFO(this->get_logger(), "Creating Simple GPS Publisher");		
+	const std::string topic_name = "~/gps_fix";
+	_gps_publisher = rclcpp::Node::create_publisher<gps_msgs::msg::GPSFix>(topic_name, 10);
 	setup(type);
 }
 
 void SimpleGpsPublisher::setup(std::string type){
 	commType = type;
-	std::string p 
-		= "/ws/SkyNet/Flight Data/23 June 2023/FLIGHT 2/Log/2023_6_15_10_53_37/day_gps.txt";
+	std::string p = "/ws/SkyNet/Flight Data/good/2023_11_29_8_42_35/day_gps.txt";
 	std::function<void(FlightLogData)> callbackFunction = [this](FlightLogData data){
 		gpsCallback(data);
 	};
@@ -289,7 +294,13 @@ void SimpleGpsPublisher::setup(std::string type){
 
 void 
 SimpleGpsPublisher::gpsCallback(FlightLogData data){
-	RCLCPP_DEBUG(this->get_logger(), "Inside GPS Subscriber Callback");
-	RCLCPP_DEBUG(this->get_logger(), "latitude: %f", data.latitude);
-	RCLCPP_DEBUG(this->get_logger(), "longitude: %f", data.longitude);
+	//RCLCPP_DEBUG(this->get_logger(), "Inside GPS Subscriber Callback");
+	//RCLCPP_DEBUG(this->get_logger(), "latitude: %f", data.latitude);
+	//RCLCPP_DEBUG(this->gps_msgset_logger(), "longitude: %f", data.longitude);
+	gps_msgs::msg::GPSFix::UniquePtr gps_msg_ptr(new gps_msgs::msg::GPSFix());
+	gps_msg_ptr->latitude = data.latitude;
+	gps_msg_ptr->longitude = data.longitude;
+	gps_msg_ptr->altitude = data.altitudeMSL;
+	_gps_publisher->publish(std::move(gps_msg_ptr));
+
 }

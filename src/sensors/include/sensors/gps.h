@@ -3,6 +3,10 @@
 #define UTIL_CLASSES
 #include "sensors/UtilClasses.h"
 #endif
+#ifndef GPS_MSGS
+#define GPS_MSGS
+#include "gps_msgs/msg/gps_fix.hpp"
+#endif
 #include "rclcpp/rclcpp.hpp"
 #include <string>
 #include <sys/types.h>
@@ -81,4 +85,5 @@ class SimpleGpsPublisher: public rclcpp::Node{
 		UDPCommunication* comm;
 		std::string commType;
 		DayGpsFileReader* reader;
+		rclcpp::Publisher<gps_msgs::msg::GPSFix>::SharedPtr _gps_publisher;
 };
