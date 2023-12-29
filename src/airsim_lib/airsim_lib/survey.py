@@ -189,6 +189,7 @@ class SurveyNavigator:
         responses = self.client.simGetImages([
             airsim.ImageRequest("3", airsim.ImageType.Scene, False, False),
             airsim.ImageRequest("3", airsim.ImageType.DepthVis, False, False),
+            airsim.ImageRequest("3", airsim.ImageType.Infrared, False, False),
             ])
         state = self.client.getMultirotorState()
         gnss = self.client.getGpsData().gnss
@@ -207,15 +208,23 @@ class SurveyNavigator:
         img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
         depth = img1d.reshape(response.height, response.width, 3)
         depth_timestamp = response.time_stamp
+        
+        response = responses[2]
+        img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
+        infrared = img1d.reshape(response.height, response.width, 3)
+        infrared_timestamp = response.time_stamp
         #img_rgb = np.flipud(rgb)
         if self.show:
             cv2.imshow("scene", rgb)
             cv2.imshow("depth", depth)
+            cv2.imshow("infrared", infrared)
         obs = {
             'scene' : rgb,
             'scene_timestamp': rgb_timestamp, 
             'depth': depth,
             'depth_timestamp': depth_timestamp,
+            'infrared': infrared,
+            'infrared_timestamp': infrared_timestamp,
             'gps': np.array([gps.latitude, gps.longitude, -gps.altitude]),
             'gps_timestamp': gnss.time_utc,
             'gps_vel': np.array([vel.x_val, vel.y_val, vel.z_val]),
@@ -236,6 +245,8 @@ class AirSimNode(Node):
             if os.path.exists('day_gps.txt'):
                 os.remove('day_gps.txt')
             self.file = open("day_gps.txt", 'a')
+            size = (640, 480)
+            #self.video = cv2.VideoWriter('frames.avi', cv2.VideoWriter_fourcc(*'H264'), 25, size)
         self.bridge = cv_bridge.CvBridge()
         self.navigator = SurveyNavigator("./", 2)
         obs = self.navigator._get_observation()

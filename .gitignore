@@ -1,6 +1,3 @@
-ORBSlam2
-ORBSlam3
-AKAZESlam
-librealsense
-SkyNet
-envs/
+build/
+install/
+log/
