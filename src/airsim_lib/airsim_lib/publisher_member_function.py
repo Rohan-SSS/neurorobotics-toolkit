@@ -7,7 +7,7 @@ def main(args=None):
 
     airsim_node = AirSimNode("airsim_node")
 
-    rclpy.spin(airsim_node)
+    #rclpy.spin(airsim_node)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically

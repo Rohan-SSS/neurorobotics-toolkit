@@ -11,6 +11,7 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import NavSatFix
 from geometry_msgs.msg import Vector3Stamped
 import cv_bridge
+import shutil
 
 AIRCRAFT_OFF = 0
 AIRCRAFT_STARTUP = 13
@@ -22,7 +23,7 @@ AIRCRAFT_HOVER = 11
 class SurveyNavigator:
     dist_threshold = 10
     def __init__(self, logdir, num_waypoints, show = True):
-        self.frame_counter = 0
+        self.frame_counter = 1
         self.num_waypoints = num_waypoints
         self.currentUAVMode = AIRCRAFT_OFF
         self.show = show
@@ -147,6 +148,7 @@ class SurveyNavigator:
                 obs['mode'] = AIRCRAFT_OFF
                 obs = self._get_observation()
                 step_callback(obs)
+        print('Done Landing')
 
     def set_path(self):
         print("Setting Path for Sampling")
@@ -238,15 +240,25 @@ class SurveyNavigator:
 
 
 class AirSimNode(Node):
-    def __init__(self, nodeName = "airsim_node", logToFile = True):
+    def __init__(self, nodeName = "airsim_node", logToFile = True, logDir = "data"):
         super().__init__(nodeName)
         self.logToFile = logToFile
+        self.logDir = logDir
         if self.logToFile:
-            if os.path.exists('day_gps.txt'):
-                os.remove('day_gps.txt')
-            self.file = open("day_gps.txt", 'a')
+            if os.path.exists(self.logDir):
+                shutil.rmtree(self.logDir)
+            os.mkdir(self.logDir)
+            filePath = os.path.join(self.logDir, 'day_gps.txt')
+            if os.path.exists(filePath):
+                os.remove(filePath)
+            self.file = open(filePath, 'a')
             size = (640, 480)
-            #self.video = cv2.VideoWriter('frames.avi', cv2.VideoWriter_fourcc(*'H264'), 25, size)
+            self.videofilePath = os.path.join(self.logDir, 'frames.avi')
+            self.video = cv2.VideoWriter(self.videofilePath, cv2.VideoWriter_fourcc(*'MJPG'), 25, size, True)
+            self.depthDatadir = os.path.join(self.logDir, 'Depth')
+            if os.path.exists(self.depthDatadir):
+                shuitl.rmtree(self.depthDatadir)
+            os.mkdir(self.depthDatadir)
         self.bridge = cv_bridge.CvBridge()
         self.navigator = SurveyNavigator("./", 2)
         obs = self.navigator._get_observation()
@@ -257,6 +269,7 @@ class AirSimNode(Node):
         self._publishers['gps'] = self.create_publisher(NavSatFix, "~/gps/position", 10)
         self._publishers['gps_vel'] = self.create_publisher(Vector3Stamped, "~/gps/velocity", 10)
         self.navigator.start(self.step_callback)
+        print("done with node constructor")
 
 
     def step_callback(self, obs):
@@ -314,9 +327,18 @@ class AirSimNode(Node):
                 obs['position'][2]
                 )
         self.file.write(data)
-     
+        self.video.write(obs['scene'])
+        cv2.imwrite(os.path.join(self.depthDatadir, 'depth_{}.png'.format(obs['frame_counter'])), obs['depth'])
+
+    def destroy_node(self):
+        print("Destroying custom node")
+        self.close()
+        super().destroy_node()
+
+
     def close(self):
         self.file.close()
+        self.video.release()
 
 
 if __name__ == "__main__":
