@@ -1,4 +1,5 @@
 import os
+import time
 import airsim
 import copy
 import numpy as np
@@ -21,17 +22,27 @@ AIRCRAFT_HOME = 3
 AIRCRAFT_HOVER = 11
 
 class SurveyNavigator:
-    dist_threshold = 10
+    dist_threshold = 0.5
+    dt = 0.06
+    accel_threshold = 1
+    max_speed = 2
+    MAX_DEPTH = 20
+    MIN_DEPTH = 0
     def __init__(self, logdir, num_waypoints, show = True):
-        self.frame_counter = 1
+        self.frame_counter = 0
         self.num_waypoints = num_waypoints
         self.currentUAVMode = AIRCRAFT_OFF
+        self.modeSetTime = 0
+        self.last_speed = 0.0
+        self.goal_index = 0
+        self.target_proximity = False
         self.show = show
         self.descend = False
         self.descent_started = False
         self.logdir = logdir
         self.client = airsim.MultirotorClient()
         self.currentUAVMode = AIRCRAFT_STARTUP
+        self.modeSetTime = copy.deepcopy(self.frame_counter)
         self.client.confirmConnection()
         self.client.enableApiControl(True)
         state = self.client.getMultirotorState()
@@ -50,14 +61,17 @@ class SurveyNavigator:
         for i in range(40):
             obs = self._get_observation()
             step_callback(obs)
+            time.sleep(1/25)
+            self._last_obs = copy.deepcopy(obs)
         state = self.client.getMultirotorState()
         landed = state.landed_state
         self.start = state.kinematics_estimated.position
         if(landed == airsim.LandedState.Landed):
             self.currentUAVMode = AIRCRAFT_TAKEOFF
+            self.modeSetTime = copy.deepcopy(self.frame_counter)
             self.takeoff = True
             print("taking off...")
-            self.client.takeoffAsync()
+            self.client.takeoffAsync().join()
             state = self.client.getMultirotorState()
             self.start = state.kinematics_estimated.position
             pos = state.kinematics_estimated.position
@@ -67,12 +81,14 @@ class SurveyNavigator:
         for i in range(40):
             obs = self._get_observation()
             step_callback(obs)
+            time.sleep(1/25)
+            self._last_obs = copy.deepcopy(obs)
        
         self.set_path()
 
         #landed = False
-        index = 0
-        goal = self.waypoints[index]
+        self.goal_index = 0
+        goal = self.waypoints[self.goal_index]
         state = self.client.getMultirotorState()
         pos = state.kinematics_estimated.position
         gps = state.gps_location
@@ -82,52 +98,56 @@ class SurveyNavigator:
         print("Flying Off.")
         count = 0
         while not landed:
+            time.sleep(1/40)
             state = self.client.getMultirotorState()
             # print("position: ", state.kinematics_estimated.position)
             landed = (state.landed_state == airsim.LandedState.Landed)
             #print(state.landed_state, landed)
             pos = state.kinematics_estimated.position
-            pose = np.array([pos.x_val, pos.y_val, pos.z_val]) 
-            action = self.sample_action(goal, pose)
+            vel = state.kinematics_estimated.linear_velocity
+            state = np.array([pos.x_val, pos.y_val, pos.z_val, vel.x_val, vel.y_val, vel.z_val]) 
+            action = self.sample_action(goal, state)
             obs = self.step(action, self.descend)
             step_callback(obs)
+            self._last_obs = copy.deepcopy(obs)
             if self.show and cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            dist = np.sqrt(np.square(goal - pose).sum())
-            #print(dist)
-            if dist < 2:
+            dist = np.sqrt(np.square(goal - state[:3]).sum())
+            # print(dist)
+            if dist < self.dist_threshold:
                 if not self.descent_started:
-                    print("Reached waypoint ", index)
-                if index == 0:
+                    print("Reached waypoint ", self.goal_index)
+                if self.goal_index == 0:
                     self.currentUAVMode = AIRCRAFT_HOVER
-                if index >= 0:
-                    index += 1 
-                if index > self.waypoints.shape[0] - 1 and index >= 0:
-                    print("Last waypoint, index", index)
+                    self.modeSetTime = copy.deepcopy(self.frame_counter)
+                if self.goal_index >= 0:
+                    self.goal_index += 1 
+                if self.goal_index > self.waypoints.shape[0] - 1 and self.goal_index >= 0:
+                    print("Last waypoint, index", self.goal_index)
                     goal = self.waypoints[0]
-                    index = -1
-                elif index < 0 and not self.descent_started:
+                    self.goal_index = -1
+                elif self.goal_index < 0 and not self.descent_started:
                     self.currentUAVMode = AIRCRAFT_LAND
+                    self.modeSetTime = copy.deepcopy(self.frame_counter)
                     print("Landing Sequence Starting")
                     self.descent_started = True
                     goal = np.array([self.start.x_val, self.start.y_val, self.start.z_val])
-                elif index < 0 and self.descent_started and not self.descend:
+                elif self.goal_index < 0 and self.descent_started and not self.descend:
                     print("Landing")
                     obs['mode'] = AIRCRAFT_HOME
                     obs = self._get_observation()
                     step_callback(obs)
                     self.descend = True
-                elif index < 0 and self.descent_started and self.descend:
-                    count+=1
-                    if(count % 10 == 0):
-                        obs = self._get_observation()
-                        step_callback(obs)
-                    if(count > 500):
-                        print("Breaking Loop")
-                        break
                 else:
-                    goal = self.waypoints[index]      
+                    goal = self.waypoints[self.goal_index]      
+            elif self.goal_index < 0 and self.descent_started and self.descend:
+                count+=1
+                obs = self._get_observation()
+                step_callback(obs)
+                if(count > 150):
+                    print("Breaking Loop")
+                    break
 
         if self.takeoff:
             print("landed")
@@ -148,38 +168,72 @@ class SurveyNavigator:
                 obs['mode'] = AIRCRAFT_OFF
                 obs = self._get_observation()
                 step_callback(obs)
+                #time.sleep(1/25)
         print('Done Landing')
 
     def set_path(self):
         print("Setting Path for Sampling")
-        xpoints = np.random.uniform(-200.0, -50.0, (self.num_waypoints + 1, 1))
-        ypoints = np.random.uniform(-200.0, -50.0, (self.num_waypoints + 1, 1))
+        xpoints = np.random.uniform(-200.0, 200.0, (self.num_waypoints + 1, 1))
+        ypoints = np.random.uniform(-200.0, 200.0, (self.num_waypoints + 1, 1))
         xpoints[0] = self.start.x_val
         ypoints[0] = self.start.y_val
-        zpoints = np.random.uniform(-75, -50.0, (self.num_waypoints + 1, 1))
+        zpoints = np.random.uniform(-75, -50, (self.num_waypoints + 1, 1))
         self.waypoints = np.concatenate([xpoints, ypoints, zpoints], -1)
         print(self.waypoints)
 
-    def sample_action(self, goal, pose):
-        dist = np.sqrt(np.square(goal - pose).sum())
-        orientation = np.arctan2(pose[1] - goal[1], pose[0] - goal[0])
-        if(dist < self.dist_threshold):
-            speed = dist
+    def get_speed(self, curr_v, x, goal_speed, goal):
+        v = 0
+        dx = np.abs(x - goal)
+        if dx < ((curr_v ** 2) / (2 * self.accel_threshold)):
+            goal_speed = 0
+        #print("dx: ", dx, "\nx: ", x, "\ncurr_speed: ", curr_v, "\ngoal: ", goal, "\ngoal_speed: ", goal_speed, "\nstopping distance: ", (curr_v ** 2) / (2 * self.accel_threshold))
+        #print(self.accel_threshold * self.dt)
+        v = curr_v + self.accel_threshold * self.dt * (goal_speed - curr_v)
+        # v = curr_v + self.accel_threshold * self.dt * (-1 if goal_speed - curr_v > 0 else 1)
+        return v
+
+    def sample_action(self, goal, state):
+        x, y, z, curr_vx, curr_vy, curr_vz = state
+        vx = 0
+        vy = 0
+        vz = 0
+        goal_index = copy.deepcopy(self.goal_index)
+        if self.goal_index == -1:
+            goal_index = 0
+        goal = self.waypoints[goal_index]
+        if self.descent_started:
+            goal = np.array([self.start.x_val, self.start.y_val, self.start.z_val])
+        dz = goal[2] - z
+        goal_vz = 0
+        goal_vx = 0
+        goal_vy = 0
+        if dz > 0:
+            goal_vz = self.max_speed / 5
         else:
-            speed = self.dist_threshold
-        vx = -speed * np.cos(orientation)
-        vy = -speed * np.sin(orientation)
-        z = goal[2]
-        return np.array([vx, vy, z])
+            goal_vz = -self.max_speed / 5
+        if dz > -self.dist_threshold and dz < self.dist_threshold:
+            goal_vz = 0
+        vz = self.get_speed(curr_vz, z, goal_vz, goal[2])
+        if goal_index != 0 or self.goal_index == -1:
+            dx = goal[0] - x
+            dy = goal[1] - y
+            orientation = np.arctan2(dy, dx)
+            goal_vx = self.max_speed * np.cos(orientation)
+            goal_vy = self.max_speed * np.sin(orientation)
+            vx = self.get_speed(curr_vx, x, goal_vx, goal[0]) 
+            vy = self.get_speed(curr_vy, y, goal_vy, goal[1])
+        v = np.array([vx, vy, vz])
+        #print(v, goal_vx, goal_vy, goal_vz)
+        return v
 
     def step(self, action, land = False):
         # print(action)
         if not land:
             # print("moving")
-            vx, vy, z = action
-            self.client.moveByVelocityZAsync(
-                    vx, vy, z, 1,
-                    airsim.DrivetrainType.MaxDegreeOfFreedom)
+            vx, vy, vz = action
+            self.client.moveByVelocityAsync(
+                    vx, vy, vz, self.dt,
+                    airsim.DrivetrainType.MaxDegreeOfFreedom).join()
         else:
             self.client.landAsync()
         obs = self._get_observation()
@@ -190,12 +244,13 @@ class SurveyNavigator:
         # Paused Airsim client to ensure synchronised data timestamps
         responses = self.client.simGetImages([
             airsim.ImageRequest("3", airsim.ImageType.Scene, False, False),
-            airsim.ImageRequest("3", airsim.ImageType.DepthVis, False, False),
+            airsim.ImageRequest("3", airsim.ImageType.DepthPerspective, True, False),
             airsim.ImageRequest("3", airsim.ImageType.Infrared, False, False),
             ])
         state = self.client.getMultirotorState()
         gnss = self.client.getGpsData().gnss
         gps = gnss.geo_point
+
         pos = state.kinematics_estimated.position
         vel = gnss.velocity
         self.client.simPause(False)
@@ -205,10 +260,19 @@ class SurveyNavigator:
         rgb = img1d.reshape(response.height, response.width, 3)
         rgb_timestamp = response.time_stamp
 
-
+        # https://github.com/microsoft/AirSim/issues/2835
+        # Refer to the aforementioned link for more information about the implementation below
         response = responses[1]
-        img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
-        depth = img1d.reshape(response.height, response.width, 3)
+        img1d = airsim.list_to_2d_float_array(response.image_data_float, response.width, response.height)
+        # print("Image size: ", response.width, response.height)
+        depth_img_in_meters = img1d.reshape(response.height, response.width, 1)
+        depth_img_in_meters = np.clip(depth_img_in_meters, self.MIN_DEPTH, self.MAX_DEPTH)
+        # print("Minimum distance: ", np.min(depth_img_in_meters))
+        # print("Maximum Depth: ", np.max(depth_img_in_meters))
+        # depth = np.interp(depth_img_in_meters, (self.MIN_DEPTH, self.MAX_DEPTH), (0, 255))
+        # depth = depth.astype(np.uint8)
+        depth = np.clip(depth_img_in_meters * 1000, 0, 65535)
+        depth = depth.astype(np.uint16)
         depth_timestamp = response.time_stamp
         
         response = responses[2]
@@ -240,10 +304,11 @@ class SurveyNavigator:
 
 
 class AirSimNode(Node):
-    def __init__(self, nodeName = "airsim_node", logToFile = True, logDir = "data"):
+    def __init__(self, nodeName = "airsim_node", logToFile = True, logDir = "data", num_waypoints = 1):
         super().__init__(nodeName)
         self.logToFile = logToFile
         self.logDir = logDir
+        self.switchedToMonocular = False
         if self.logToFile:
             if os.path.exists(self.logDir):
                 shutil.rmtree(self.logDir)
@@ -254,13 +319,13 @@ class AirSimNode(Node):
             self.file = open(filePath, 'a')
             size = (640, 480)
             self.videofilePath = os.path.join(self.logDir, 'frames.avi')
-            self.video = cv2.VideoWriter(self.videofilePath, cv2.VideoWriter_fourcc(*'MJPG'), 25, size, True)
+            self.video = cv2.VideoWriter(self.videofilePath, cv2.VideoWriter_fourcc(*'MJPG'), 15, size, True)
             self.depthDatadir = os.path.join(self.logDir, 'Depth')
             if os.path.exists(self.depthDatadir):
                 shuitl.rmtree(self.depthDatadir)
             os.mkdir(self.depthDatadir)
         self.bridge = cv_bridge.CvBridge()
-        self.navigator = SurveyNavigator("./", 2)
+        self.navigator = SurveyNavigator(self.logDir, num_waypoints)
         obs = self.navigator._get_observation()
         self._publishers = {}
 
@@ -280,7 +345,7 @@ class AirSimNode(Node):
         
         header_depth = Header()
         header_depth.stamp = rclpy.time.Time(nanoseconds = obs['depth_timestamp']).to_msg()
-        depth = self.bridge.cv2_to_imgmsg(obs['depth'], encoding = 'rgb8', header = header_depth)
+        depth = self.bridge.cv2_to_imgmsg(obs['depth'], encoding = 'mono16', header = header_depth)
         self._publishers['depth'].publish(depth)
 
         header_gps = Header()
@@ -311,6 +376,10 @@ class AirSimNode(Node):
         sensorType = 'RGBD'
         if(obs['position'][2] > 7.5):
             sensorType = 'Monocular'
+            if not self.switchedToMonocular:
+
+                print('Switched to Monocular')
+                self.switchedToMonocular = True
         data = "{:.7f},{:.7f},{:.7f},{},0,{},{},{:.7f},{:.7f},{:.7f},{},11,0,{},GDN_PROCESS_OK,TRACKING,Sensor_OK,Sensor_OK,{},0,{:.7f},0,0\n".format(
                 obs['gps'][0],
                 obs['gps'][1],
