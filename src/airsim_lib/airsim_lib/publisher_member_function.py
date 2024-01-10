@@ -5,7 +5,7 @@ from .survey import SurveyNavigator, AirSimNode
 def main(args=None):
     rclpy.init(args=args)
 
-    airsim_node = AirSimNode("airsim_node")
+    airsim_node = AirSimNode("airsim_node", True, "data", 1)
 
     #rclpy.spin(airsim_node)
 

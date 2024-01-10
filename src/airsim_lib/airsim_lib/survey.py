@@ -58,11 +58,11 @@ class SurveyNavigator:
 
     def start(self, step_callback):
         self.client.armDisarm(True)
-        for i in range(40):
-            obs = self._get_observation()
-            step_callback(obs)
-            time.sleep(1/25)
-            self._last_obs = copy.deepcopy(obs)
+        # for i in range(40):
+        #     obs = self._get_observation()
+        #     step_callback(obs)
+        #     time.sleep(1/25)
+        #     self._last_obs = copy.deepcopy(obs)
         state = self.client.getMultirotorState()
         landed = state.landed_state
         self.start = state.kinematics_estimated.position
@@ -411,6 +411,6 @@ class AirSimNode(Node):
 
 
 if __name__ == "__main__":
-    nav = SurveyNavigator("./", 1)
+    nav = SurveyNavigator("./", 5)
     nav.start(step_callback)
     nav.close()
