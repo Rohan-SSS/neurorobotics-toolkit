@@ -40,7 +40,7 @@ class SurveyNavigator:
         self.descend = False
         self.descent_started = False
         self.logdir = logdir
-        self.client = airsim.MultirotorClient()
+        self.client = airsim.MultirotorClient(ip="127.0.0.0", port = 41452)
         self.currentUAVMode = AIRCRAFT_STARTUP
         self.modeSetTime = copy.deepcopy(self.frame_counter)
         self.client.confirmConnection()
@@ -325,7 +325,7 @@ class AirSimNode(Node):
                 shuitl.rmtree(self.depthDatadir)
             os.mkdir(self.depthDatadir)
         self.bridge = cv_bridge.CvBridge()
-        self.navigator = SurveyNavigator(self.logDir, num_waypoints)
+        self.navigator = SurveyNavigator(self.logDir, num_waypoints, False)
         obs = self.navigator._get_observation()
         self._publishers = {}
 
