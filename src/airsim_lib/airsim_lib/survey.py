@@ -278,6 +278,10 @@ class SurveyNavigator:
         response = responses[2]
         img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
         infrared = img1d.reshape(response.height, response.width, 3)
+        infrared = cv2.cvtColor(infrared, cv2.COLOR_BGR2GRAY)
+        infrared = infrared.astype(np.uint16)
+        infrared = 255 * infrared
+
         infrared_timestamp = response.time_stamp
         #img_rgb = np.flipud(rgb)
         if self.show:
@@ -321,9 +325,13 @@ class AirSimNode(Node):
             self.videofilePath = os.path.join(self.logDir, 'frames.avi')
             self.video = cv2.VideoWriter(self.videofilePath, cv2.VideoWriter_fourcc(*'MJPG'), 15, size, True)
             self.depthDatadir = os.path.join(self.logDir, 'Depth')
+            self.thermalDatadir = os.path.join(self.logDir, 'ThermalImages')
             if os.path.exists(self.depthDatadir):
                 shuitl.rmtree(self.depthDatadir)
             os.mkdir(self.depthDatadir)
+            if os.path.exists(self.thermalDatadir):
+                shuitl.rmtree(self.thermalDatadir)
+            os.mkdir(self.thermalDatadir)
         self.bridge = cv_bridge.CvBridge()
         self.navigator = SurveyNavigator(self.logDir, num_waypoints, False)
         obs = self.navigator._get_observation()
@@ -398,6 +406,7 @@ class AirSimNode(Node):
         self.file.write(data)
         self.video.write(obs['scene'])
         cv2.imwrite(os.path.join(self.depthDatadir, 'depth_{}.png'.format(obs['frame_counter'])), obs['depth'])
+        cv2.imwrite(os.path.join(self.thermalDatadir, '{}.png'.format(obs['frame_counter'])), obs['infrared'])
 
     def destroy_node(self):
         print("Destroying custom node")
