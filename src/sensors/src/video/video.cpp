@@ -1,4 +1,4 @@
-#include "sensors/video.h"
+#include "sensors/video/video.h"
 
 VideoFileReader::VideoFileReader(rclcpp::Logger logger, std::function<void(cv::Mat)> cb, std::string filePath): LOGGER(logger), originalCallback(cb){
 	RCLCPP_INFO(LOGGER, "Creating Video File Reader");

@@ -1,4 +1,4 @@
-#include "sensors/subscribers.h"
+#include "sensors/nodes/subscribers.h"
 
 int main(int argc, char * argv[])
 {

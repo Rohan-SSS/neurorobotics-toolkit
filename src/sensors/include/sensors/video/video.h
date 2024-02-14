@@ -1,10 +1,10 @@
 #ifndef SENSOR_PROPERTIES
 #define SENSOR_PROPERTIES
-#include "sensors/properties.h"
+#include "sensors/common/properties.h"
 #endif
 #ifndef UTIL_CLASSES
 #define UTIL_CLASSES
-#include "sensors/UtilClasses.h"
+#include "sensors/gps/UtilClasses.h"
 #endif
 #include "rclcpp/rclcpp.hpp"
 #include <thread>

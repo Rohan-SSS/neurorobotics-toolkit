@@ -1,4 +1,4 @@
-#include "sensors/realsense.h"
+#include "sensors/realsense/realsense.h"
 
 ROSSensor::ROSSensor(rs2::sensor sensor,
 		std::function<void(rs2::frame)> cb): rs2::sensor(sensor), originalCallback(cb){

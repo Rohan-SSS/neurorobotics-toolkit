@@ -12,7 +12,7 @@
 #include "stdio.h"
 #ifndef UTIL_CLASSES
 #define UTIL_CLASSES
-#include "sensors/UtilClasses.h"
+#include "sensors/gps/UtilClasses.h"
 #endif
 #include <mutex>
 #include <string.h>

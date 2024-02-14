@@ -1,4 +1,4 @@
-#include "sensors/gps.h"
+#include "sensors/gps/gps.h"
 
 UDPCommunication::UDPCommunication(rclcpp::Logger logger, std::function<void(FlightLogData)> cb): LOGGER(logger), originalCallback(cb){
 

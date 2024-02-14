@@ -25,8 +25,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 # add_subdirectory(${PROJECT_SOURCE_DIR}/ext/nmealib)
 
-add_executable(talker src/publisher_member_function.cpp src/realsense.cpp src/gps.cpp src/TelemetryValidator.cpp src/video.cpp)
-add_executable(listener src/subscriber_member_function.cpp src/subscribers.cpp)
+add_executable(talker src/nodes/publisher_member_function.cpp src/realsense/realsense.cpp src/gps/gps.cpp src/gps/TelemetryValidator.cpp src/video/video.cpp)
+add_executable(listener src/nodes/subscriber_member_function.cpp src/nodes/subscribers.cpp)
 
 ament_target_dependencies(talker rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
 ament_target_dependencies(listener rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)

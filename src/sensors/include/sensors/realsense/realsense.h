@@ -1,6 +1,6 @@
 #ifndef SENSOR_PROPERTIES
 #define SENSOR_PROPERTIES
-#include "sensors/properties.h"
+#include "sensors/common/properties.h"
 #endif
 #include "rclcpp/rclcpp.hpp"
 #include "cv_bridge/cv_bridge.h"

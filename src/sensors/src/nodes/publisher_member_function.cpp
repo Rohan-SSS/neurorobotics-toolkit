@@ -1,9 +1,9 @@
 #ifndef SENSOR_PROPERTIES
 #define SENSOR_PROPERTIES
-#include "sensors/properties.h"
+#include "sensors/common/properties.h"
 #endif
-#include "sensors/video.h"
-#include "sensors/gps.h"
+#include "sensors/video/video.h"
+#include "sensors/gps/gps.h"
 #include <chrono>
 #include <functional>
 #include <memory>

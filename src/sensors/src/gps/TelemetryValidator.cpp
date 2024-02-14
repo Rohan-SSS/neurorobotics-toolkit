@@ -1,5 +1,5 @@
-#include "sensors/TelemetryValidator.h"
-#include "sensors/TelemetryValidatorConstants.h"
+#include "sensors/gps/TelemetryValidator.h"
+#include "sensors/gps/TelemetryValidatorConstants.h"
 using namespace TelemetryValidatorConstants;
 
 std::string logFileNameJson="";

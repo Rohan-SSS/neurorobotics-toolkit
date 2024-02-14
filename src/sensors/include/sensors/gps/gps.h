@@ -1,7 +1,7 @@
-#include "sensors/TelemetryValidator.h"
+#include "sensors/gps/TelemetryValidator.h"
 #ifndef UTIL_CLASSES
 #define UTIL_CLASSES
-#include "sensors/UtilClasses.h"
+#include "sensors/gps/UtilClasses.h"
 #endif
 #ifndef GPS_MSGS
 #define GPS_MSGS

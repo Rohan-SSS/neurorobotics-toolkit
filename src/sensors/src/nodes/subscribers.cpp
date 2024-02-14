@@ -1,5 +1,5 @@
-#include "sensors/subscribers.h"
-#include "sensors/display.h"
+#include "sensors/nodes/subscribers.h"
+#include "sensors/common/display.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
