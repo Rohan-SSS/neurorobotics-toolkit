@@ -2,8 +2,7 @@
 #define SENSOR_PROPERTIES
 #include "sensors/common/properties.h"
 #endif
-#include "sensors/video/video.h"
-#include "sensors/gps/gps.h"
+#include "sensors/nodes/realsense.h"
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -39,16 +38,14 @@ int main(int argc, char * argv[])
 	accel.frameRate = 63;
 	props.push_back(accel);
 
-	/**
 	rclcpp::init(argc, argv);
 	rclcpp::spin(std::make_shared<RealSenseNode>("realsense_node", props));
 	rclcpp::shutdown();
-	*/
-	rclcpp::init(argc, argv);
-	rclcpp::executors::MultiThreadedExecutor executor;
-	executor.add_node(std::make_shared<SimpleImagePublisher>("video_node"));
-	executor.add_node(std::make_shared<SimpleGpsPublisher>("gps_node", "DayGpsFile"));
-	executor.spin();
+	// rclcpp::init(argc, argv);
+	// rclcpp::executors::MultiThreadedExecutor executor;
+	// executor.add_node(std::make_shared<SimpleImagePublisher>("video_node"));
+	// executor.add_node(std::make_shared<SimpleGpsPublisher>("gps_node", "DayGpsFile"));
+	// executor.spin();
 	rclcpp::shutdown();
 	return 0;
 }

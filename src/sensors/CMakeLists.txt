@@ -25,21 +25,21 @@ find_package(rosidl_default_generators REQUIRED)
 
 # add_subdirectory(${PROJECT_SOURCE_DIR}/ext/nmealib)
 
-add_executable(talker src/nodes/publisher_member_function.cpp src/realsense/realsense.cpp src/gps/gps.cpp src/gps/TelemetryValidator.cpp src/video/video.cpp)
-add_executable(listener src/nodes/subscriber_member_function.cpp src/nodes/subscribers.cpp)
+add_executable(realsense_talker src/nodes/realsense_main_function.cpp src/nodes/realsense.cpp src/realsense/d455.cpp)
+add_executable(debug_realsense_listener src/nodes/subscriber_member_function.cpp src/nodes/subscribers.cpp)
 
-ament_target_dependencies(talker rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
-ament_target_dependencies(listener rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
+ament_target_dependencies(realsense_talker rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
+ament_target_dependencies(debug_realsense_listener rclcpp std_msgs sensor_msgs cv_bridge message_filters gps_msgs)
 
-target_include_directories(talker PUBLIC /ws/SkyNet/Sensor/include
+target_include_directories(realsense_talker PUBLIC /ws/SkyNet/Sensor/include
 	PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include PUBLIC ${realsense2_INCLUDE_DIR})
-target_include_directories(listener PUBLIC /ws/SkyNet/Sensor/include
+target_include_directories(debug_realsense_listener PUBLIC /ws/SkyNet/Sensor/include
 	PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
 
-target_link_libraries(talker
+target_link_libraries(realsense_talker
 	${PROJECT_SOURCE_DIR}/ext/libSensor.so yaml-cpp
 	${OpenCV_LIBS} ${realsense2_LIBRARY})
-target_link_libraries(listener ${PROJECT_SOURCE_DIR}/ext/libSensor.so yaml-cpp ${OpenCV_LIBS} ${realsense2_LIBRARY})
+target_link_libraries(debug_realsense_listener ${PROJECT_SOURCE_DIR}/ext/libSensor.so yaml-cpp ${OpenCV_LIBS} ${realsense2_LIBRARY})
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -56,8 +56,8 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-  talker
-  listener
+  realsense_talker
+  debug_realsense_listener
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
