@@ -1,6 +1,6 @@
 #include "sensors/nodes/realsense.h"
 
-RealSenseNode::RealSenseNode(std::string nodeName, std::vector<SensorProperties> &props) : Node(nodeName){
+RealSensePublisherNode::RealSensePublisherNode(std::string nodeName, std::vector<SensorProperties> &props) : Node(nodeName){
 	//TODO Node configuration according to mode of data that can be published
 	std::cout<<"Creating Real Sense Node"<<std::endl;
 	std::function<void(rs2::frame)> frameCallbackFunction = [this](rs2::frame frame){
@@ -14,7 +14,7 @@ RealSenseNode::RealSenseNode(std::string nodeName, std::vector<SensorProperties>
 	setup(props);
 }
 
-sensor_id RealSenseNode::getSensorID(rs2::stream_profile &stream_profile){
+sensor_id RealSensePublisherNode::getSensorID(rs2::stream_profile &stream_profile){
 	int stream_index = stream_profile.stream_index();
 	rs2_stream stream_type = stream_profile.stream_type();
 	sensor_id id = std::make_pair(stream_index, stream_type);
@@ -22,7 +22,7 @@ sensor_id RealSenseNode::getSensorID(rs2::stream_profile &stream_profile){
 }
 
 
-void RealSenseNode::initializeFormatsMaps()
+void RealSensePublisherNode::initializeFormatsMaps()
 {
     // from rs2_format to OpenCV format
     // https://docs.opencv.org/3.4/d1/d1b/group__core__hal__interface.html
@@ -64,7 +64,7 @@ void RealSenseNode::initializeFormatsMaps()
 }
 
 
-uint64_t RealSenseNode::millisecondsToNanoseconds(double timestamp_ms)
+uint64_t RealSensePublisherNode::millisecondsToNanoseconds(double timestamp_ms)
 {
         // modf breaks input into an integral and fractional part
         double int_part_ms, fract_part_ms;
@@ -78,7 +78,7 @@ uint64_t RealSenseNode::millisecondsToNanoseconds(double timestamp_ms)
         return int_part_ns + fract_part_ns;
 }
 
-rclcpp::Time RealSenseNode::frameSystemTimeSec(rs2::frame frame)
+rclcpp::Time RealSensePublisherNode::frameSystemTimeSec(rs2::frame frame)
 {
     double timestamp_ms = frame.get_timestamp();
     if (frame.get_frame_timestamp_domain() == RS2_TIMESTAMP_DOMAIN_HARDWARE_CLOCK)
@@ -96,7 +96,7 @@ rclcpp::Time RealSenseNode::frameSystemTimeSec(rs2::frame frame)
 }
 
 
-rclcpp::Time RealSenseNode::imuSystemTimeSec(rs2::frame frame)
+rclcpp::Time RealSensePublisherNode::imuSystemTimeSec(rs2::frame frame)
 {
     double timestamp_ms = frame.get_timestamp();
     if (frame.get_frame_timestamp_domain() == RS2_TIMESTAMP_DOMAIN_HARDWARE_CLOCK)
@@ -113,7 +113,7 @@ rclcpp::Time RealSenseNode::imuSystemTimeSec(rs2::frame frame)
     }
 }
 
-void RealSenseNode::frameCallback(rs2::frame frame){
+void RealSensePublisherNode::frameCallback(rs2::frame frame){
 	RCLCPP_DEBUG(this->get_logger(), "frame arrived");
 	rs2::stream_profile stream_profile = frame.get_profile();
 	sensor_id id = getSensorID(stream_profile);
@@ -154,7 +154,7 @@ void RealSenseNode::frameCallback(rs2::frame frame){
 	}
 }
 
-void RealSenseNode::imuCallback(rs2::frame frame){
+void RealSensePublisherNode::imuCallback(rs2::frame frame){
 	rs2::stream_profile stream_profile = frame.get_profile();
 	sensor_id id = getSensorID(stream_profile);
 	if(!_is_imu_time_initialised){
@@ -244,7 +244,7 @@ std::string getTopicNameFromProfile(rs2::stream_profile &profile, std::pair<std:
 	return topic_name;
 }
 
-void RealSenseNode::addStreamProfile(rs2::stream_profile &profile, std::pair<std::string, std::string> dev_id){
+void RealSensePublisherNode::addStreamProfile(rs2::stream_profile &profile, std::pair<std::string, std::string> dev_id){
 	std::replace(dev_id.second.begin(), dev_id.second.end(), ' ', '_');
 	const std::string topic_name = getTopicNameFromProfile(profile, dev_id);
 	sensor_id id = std::make_pair(profile.stream_index(), profile.stream_type());
@@ -321,7 +321,7 @@ void querySensorOptionsAndChoose(ROSSensor* sensor, std::vector<SensorProperties
 	}
 }
 
-bool RealSenseNode::setup(std::vector<SensorProperties> &props){
+bool RealSensePublisherNode::setup(std::vector<SensorProperties> &props){
 	std::vector<rs2::stream_profile> profiles;
 	for(auto& [sensor, dev_id]: hub->queryAllSensors()){
 		profiles.clear();

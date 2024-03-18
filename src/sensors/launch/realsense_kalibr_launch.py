@@ -13,11 +13,11 @@ def generate_launch_description():
             executable='realsense_talker',
             arguments=['--ros-args', '--log-level', "INFO"],
             output='screen',
-            name='talker'),
+            name='realsense_talker'),
         launch_ros.actions.Node(
             package='sensors',
-            executable='debug_realsense_listener',
+            executable='kalibr_realsense_listener',
             output='screen',
-            arguments=['--ros-args', '--log-level', 'INFO',],
-            name='listener'),
+            arguments=['--ros-args', '--log-level', 'INFO'],
+            name='kalibr_realsense_listener'),
   ])

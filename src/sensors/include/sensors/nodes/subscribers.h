@@ -3,16 +3,18 @@
 #include "gps_msgs/msg/gps_fix.hpp"
 #endif
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <filesystem>
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
 #include <cv_bridge/cv_bridge.h>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
 
 
 class SimpleImageSubscriber: public rclcpp::Node{
@@ -52,4 +54,32 @@ class SyncedSubscriber: public rclcpp::Node{
 		const std::string OPENCV_WINDOW_DEPTH = "Depth window";
 		const std::string OPENCV_WINDOW_INFRA = "Infrared window";
 		int count;
+};
+
+typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, sensor_msgs::msg::Imu> RealSenseKalibrIMUPolicy;
+typedef message_filters::Synchronizer<RealSenseKalibrIMUPolicy> RealSenseKalibrIMUSyncer;
+
+
+bool createDirectory(std::string dirPath);
+
+class RealSenseKalibrSyncedIMUSubscriber: public rclcpp::Node{
+	public:
+		RealSenseKalibrSyncedIMUSubscriber(std::string node_name, std::string logDir);
+		void imuCallback(
+				const sensor_msgs::msg::Imu::ConstSharedPtr &accel,
+				const sensor_msgs::msg::Imu::ConstSharedPtr &gyro);
+		void frameCallback(const sensor_msgs::msg::Image::SharedPtr infrared);
+	private:
+		message_filters::Subscriber<sensor_msgs::msg::Imu> accel;
+		message_filters::Subscriber<sensor_msgs::msg::Imu> gyro;
+		rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr infrared;
+		std::shared_ptr<RealSenseKalibrIMUSyncer> syncImu;
+		int count = 0, count2 = 0;
+		std::ofstream imuLogFile;
+		std::string imuLogFilePath;
+		std::string infraredLogDir;
+		bool closeFileAfterWrite = false;
+		const std::string INFRARED_WINDOW = "Infrared window";
+
+		bool logIMUToFile(std::string log);
 };

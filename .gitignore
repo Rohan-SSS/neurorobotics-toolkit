@@ -2,5 +2,6 @@ build/
 install/
 log/
 data/
+kalibr_data/
 *__pycache__/
 *.tar*

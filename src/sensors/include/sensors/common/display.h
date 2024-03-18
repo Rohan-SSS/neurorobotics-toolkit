@@ -168,4 +168,4 @@ void ShowManyImages(string title, int nArgs, ...) {
 
 	// End the number of arguments
 	va_end(args);
-}
+};

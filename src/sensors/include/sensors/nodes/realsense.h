@@ -1,4 +1,9 @@
 #include "sensors/realsense/d455.h"
+#include "sensor_msgs/msg/imu.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include <string>
 
 void querySensorOptionsAndChoose(ROSSensor* sensor,
 		std::vector<SensorProperties> &props,
@@ -6,9 +11,9 @@ void querySensorOptionsAndChoose(ROSSensor* sensor,
 
 std::string getTopicNameFromProfile(rs2::stream_profile &profile, std::pair<std::string, std::string> dev_id);
 
-class RealSenseNode: public rclcpp::Node{
+class RealSensePublisherNode: public rclcpp::Node{
 	public:
-		RealSenseNode(std::string node_name, std::vector<SensorProperties> &props);
+		RealSensePublisherNode(std::string node_name, std::vector<SensorProperties> &props);
 		bool setup(std::vector<SensorProperties> &props);
 	private:
 		bool _is_frame_time_initialised = false;

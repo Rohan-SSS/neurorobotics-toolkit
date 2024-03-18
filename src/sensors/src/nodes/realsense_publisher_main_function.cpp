@@ -39,13 +39,13 @@ int main(int argc, char * argv[])
 	props.push_back(accel);
 
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<RealSenseNode>("realsense_node", props));
+	rclcpp::spin(std::make_shared<RealSensePublisherNode>("realsense_node", props));
 	rclcpp::shutdown();
 	// rclcpp::init(argc, argv);
 	// rclcpp::executors::MultiThreadedExecutor executor;
 	// executor.add_node(std::make_shared<SimpleImagePublisher>("video_node"));
 	// executor.add_node(std::make_shared<SimpleGpsPublisher>("gps_node", "DayGpsFile"));
 	// executor.spin();
-	rclcpp::shutdown();
+	// rclcpp::shutdown();
 	return 0;
 }
