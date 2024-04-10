@@ -1,5 +1,6 @@
-#include "sensors/nodes/subscribers.h"
+#include "sensors/realsense/subscribers.h"
 #include "sensors/common/display.h"
+
 
 SimpleImageSubscriber::SimpleImageSubscriber(std::string node_name, const std::string topic_name): Node(node_name){
 	subscription = this->create_subscription<sensor_msgs::msg::Image>(
@@ -52,7 +53,7 @@ void SyncedSubscriber::callback(
 	cv_bridge::CvImagePtr cv_ptr_depth;
 	cv_ptr_depth = cv_bridge::toCvCopy(depth, depth->encoding);
 	//cv::imshow(OPENCV_WINDOW_DEPTH, cv_ptr_depth->image);
-	
+
 	cv_bridge::CvImagePtr cv_ptr_infrared;
 	cv_ptr_infrared = cv_bridge::toCvCopy(infrared, infrared->encoding);
 	//cv::imshow(OPENCV_WINDOW_INFRA, cv_ptr_infrared->image);
@@ -73,9 +74,9 @@ void SyncedSubscriber::callback(
 bool createDirectory(std::string dirPath){
 	if(!std::filesystem::is_directory(dirPath)){
 		if(std::filesystem::is_regular_file(dirPath))
-		{    
+		{
 			std::filesystem::remove(dirPath);
-		}    
+		}
 		return std::filesystem::create_directory(dirPath);
 	}
 	return false;
@@ -100,7 +101,7 @@ RealSenseKalibrSyncedIMUSubscriber::RealSenseKalibrSyncedIMUSubscriber(std::stri
 	}
 
 	RCLCPP_INFO(this->get_logger(), "Creating file for logging IMU");
-	imuLogFilePath = logDir + "kalibr_imu.csv"; 
+	imuLogFilePath = logDir + "kalibr_imu.csv";
 	imuLogFile.open(imuLogFilePath.c_str(), std::ios::app);
 	RCLCPP_INFO(this->get_logger(), "Created file for logging IMU");
 	RCLCPP_INFO(this->get_logger(), "Creating folders for infrared image logging");
@@ -118,15 +119,15 @@ RealSenseKalibrSyncedIMUSubscriber::RealSenseKalibrSyncedIMUSubscriber(std::stri
 
 }
 
-std::string repeat(std::string s, int n) 
-{ 
-    // Copying given string to temporary string. 
-	std::string s1 = s; 
-  
-    for (int i=1; i<n;i++) 
-        s += s1; // Concatenating strings 
-  
-    return s; 
+std::string repeat(std::string s, int n)
+{
+    // Copying given string to temporary string.
+	std::string s1 = s;
+
+    for (int i=1; i<n;i++)
+        s += s1; // Concatenating strings
+
+    return s;
 }
 
 void RealSenseKalibrSyncedIMUSubscriber::frameCallback(const sensor_msgs::msg::Image::SharedPtr infrared){
@@ -144,7 +145,7 @@ void RealSenseKalibrSyncedIMUSubscriber::frameCallback(const sensor_msgs::msg::I
 		count2 = 0;
 	}
 	count2++;
-	
+
 	cv_bridge::CvImagePtr cv_ptr_infrared = cv_bridge::toCvCopy(infrared, infrared->encoding);
 	ShowManyImages("All Image Messages", 1, cv_ptr_infrared->image);
 	cv::waitKey(1);
@@ -203,3 +204,4 @@ bool RealSenseKalibrSyncedIMUSubscriber::logIMUToFile(std::string log){
 	}
 	return true;
 }
+

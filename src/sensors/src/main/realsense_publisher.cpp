@@ -2,7 +2,7 @@
 #define SENSOR_PROPERTIES
 #include "sensors/common/properties.h"
 #endif
-#include "sensors/nodes/realsense.h"
+#include "sensors/realsense/publishers.h"
 #include <chrono>
 #include <functional>
 #include <memory>

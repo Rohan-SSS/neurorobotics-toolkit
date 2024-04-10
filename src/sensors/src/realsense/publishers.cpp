@@ -1,4 +1,4 @@
-#include "sensors/nodes/realsense.h"
+#include "sensors/realsense/publishers.h"
 
 RealSensePublisherNode::RealSensePublisherNode(std::string nodeName, std::vector<SensorProperties> &props) : Node(nodeName){
 	//TODO Node configuration according to mode of data that can be published
