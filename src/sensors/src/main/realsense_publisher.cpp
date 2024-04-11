@@ -21,8 +21,8 @@ int main(int argc, char * argv[])
 {
 	
 	//TODO Replace with proper configuration mechanism
-	std::vector<SensorProperties> props;
-	SensorProperties infrared, depth, gyro, accel;
+	std::vector<RealSenseSensorProperties> props;
+	RealSenseSensorProperties infrared, depth, gyro, accel;
 	props.push_back(infrared);
 	depth.frameType = RS2_FORMAT_Z16;
 	depth.streamDataType = RS2_STREAM_DEPTH;
@@ -30,12 +30,12 @@ int main(int argc, char * argv[])
 	gyro.frameType = RS2_FORMAT_MOTION_XYZ32F;
 	gyro.streamDataType = RS2_STREAM_GYRO;
 	gyro.isVideo = false;
-	gyro.frameRate = 200; 
+	gyro.frameRate = 400; 
 	props.push_back(gyro);
 	accel.frameType = RS2_FORMAT_MOTION_XYZ32F;
 	accel.streamDataType = RS2_STREAM_ACCEL;
 	accel.isVideo = false;
-	accel.frameRate = 63;
+	accel.frameRate = 250;
 	props.push_back(accel);
 
 	rclcpp::init(argc, argv);

@@ -5,7 +5,6 @@
 #include "message_filters/sync_policies/approximate_time.h"
 #ifndef GPS_MSGS
 #define GPS_MSGS
-#include "gps_msgs/msg/gps_fix.hpp"
 #endif
 #include <iostream>
 #include <fstream>
