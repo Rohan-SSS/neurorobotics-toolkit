@@ -24,7 +24,7 @@ public:
       std::atomic<bool> stopCapture;
       std::atomic<bool> isFrameAvailable;
 
-      LeptonCamera(uvc_device_t *d);
+      LeptonCamera(uvc_device_t *d, std::function<void(Frame, sensor_id)> cb);
 	  LeptonCamera();
       ~LeptonCamera();
       int InitDevice();

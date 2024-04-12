@@ -24,7 +24,7 @@ public:
 #endif
 
       LeptonCameraSync();
-      LeptonCameraSync(uvc_device_t* d);
+      LeptonCameraSync(uvc_device_t* d, std::function<void(Frame, sensor_id)> cb);
       ~LeptonCameraSync();
       int InitDevice();
       bool IsDeviceFound();
@@ -35,6 +35,7 @@ public:
       bool GetCurrentCameraStatusAndFrameIndex(int &index);
       void ReadPulse();
       int UpdatetimeStamp();
+	  bool publishFrame();
 	  bool start();
 
 private:

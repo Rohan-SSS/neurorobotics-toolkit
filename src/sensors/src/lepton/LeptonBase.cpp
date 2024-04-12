@@ -221,3 +221,13 @@ LEP_RESULT UVC_RunCommand(LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
 {
     return static_cast<LeptonBase *>(portDescPtr->userPtr)->UVC_RunCommand(commandID);
 }
+
+void LeptonBase::initializeFormatsMaps(){
+	_lepton_format_to_cv_format[UVC_FRAME_FORMAT_GRAY8] = CV_8UC1;
+	_lepton_format_to_cv_format[UVC_FRAME_FORMAT_Y16] = CV_16UC1;
+	_lepton_format_to_cv_format[UVC_FRAME_FORMAT_UYVY] = CV_8UC2;
+	
+	_lepton_format_to_ros_format[UVC_FRAME_FORMAT_Y16] = sensor_msgs::image_encodings::MONO16;
+	_lepton_format_to_ros_format[UVC_FRAME_FORMAT_GRAY8] = sensor_msgs::image_encodings::TYPE_8UC1;
+	_lepton_format_to_ros_format[UVC_FRAME_FORMAT_UYVY] = sensor_msgs::image_encodings::YUV422;
+}

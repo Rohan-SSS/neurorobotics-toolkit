@@ -42,6 +42,7 @@ add_executable(kalibr_realsense_listener
 # Lepton executables
 add_executable(lepton_talker
 	src/main/lepton_publisher.cpp
+	src/lepton/publishers.cpp
 	src/lepton/lepton35.cpp
 	src/lepton/LeptonBase.cpp
 	src/lepton/LeptonCamera.cpp

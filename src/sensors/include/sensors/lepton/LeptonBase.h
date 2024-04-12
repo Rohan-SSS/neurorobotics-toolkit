@@ -22,6 +22,10 @@
 #include "crc16.h"
 #include "libuvc/libuvc.h"
 #include <string>
+#include "sensors/common/types.h"
+#include "sensor_msgs/msg/image.hpp"
+#include "sensor_msgs/msg/imu.hpp"
+#include "cv_bridge/cv_bridge.h"
 
 #define LEP_CID_AGC_MODULE (0x0100)
 #define LEP_CID_OEM_MODULE (0x0800)
@@ -37,6 +41,17 @@ typedef enum
   VC_CONTROL_XU_LEP_SYS_ID,
   VC_CONTROL_XU_LEP_VID_ID,
 } VC_TERMINAL_ID;
+
+typedef std::string sensor_id;
+
+struct LeptonSensorProperties{
+	int frameWidth = 160;
+	int frameHeight = 120;
+	int frameRate = 9;
+	uvc_frame_format format;
+	sensor_id dev_id;
+	int deviceID;	
+};
 
 class LeptonBase
 {
@@ -60,12 +75,13 @@ public:
 
   LEP_RESULT UVC_RunCommand(LEP_COMMAND_ID commandID);
   virtual bool start() = 0;
+  inline static std::string mDeviceSerialNumber;
+  inline static LeptonSensorProperties* prop;
 
 protected:
   uvc_device_handle_t *devh;
   LEP_CAMERA_PORT_DESC_T portDesc;
   uvc_device_descriptor_t *mDeviceDescriptor = NULL;
-  std::string mDeviceSerialNumber;
   uvc_device_t *dev;
   uvc_stream_ctrl_t ctrl;
   uvc_error_t res;
@@ -77,6 +93,12 @@ protected:
   inline static std::atomic<int> mLeptonFrameID;
   inline static double timeStamp;
   inline static std::mutex mFrameLock;
+  inline static std::function<void(Frame, sensor_id)> originalCallback;
+
+  void initializeFormatsMaps();
+  inline static std::map<uvc_frame_format, int> _lepton_format_to_cv_format;
+  inline static std::map<uvc_frame_format, std::string> _lepton_format_to_ros_format;
+
 };
 
 #endif

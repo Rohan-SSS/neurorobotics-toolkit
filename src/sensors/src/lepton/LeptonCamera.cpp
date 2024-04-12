@@ -12,16 +12,19 @@ LeptonCamera::LeptonCamera()
 {
 	std::cout<<"Creating LeptonCamera"<<std::endl;
 }
-LeptonCamera::LeptonCamera(uvc_device_t* d)
+
+LeptonCamera::LeptonCamera(uvc_device_t* d, std::function<void(Frame, sensor_id)> cb)
 {
+	LeptonCamera::initializeFormatsMaps();
     LeptonCamera::rawImage = cv::Mat();
     LeptonCamera::mLeptonFrameID = 0;
     LeptonCamera::timeStamp = 0;
 	LeptonCamera::dev = d;
+	LeptonCamera::originalCallback = cb;
     stopCapture = false;
     isFrameAvailable = false;
     /* Locates the first attached UVC device, stores in dev */
-    InitDevice();
+    // InitDevice();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
@@ -38,29 +41,26 @@ void LeptonCamera::LeptonCallback(uvc_frame_t *frame, void *ptr)
     LeptonCamera *_this = static_cast<LeptonCamera *>(ptr);
     uvc_error_t ret;
 
-#ifdef LEPTON_GRAY8_SETTINGS
     {
         std::unique_lock<std::mutex> lock(mFrameLock);
-        rawImage = cv::Mat(frame->height, frame->width, CV_8UC1, frame->data, 0);
-    }
-#endif
-
-#ifdef LEPTON_Y16_SETTINGS
-    {
-        std::unique_lock<std::mutex> lock(mFrameLock);
-        cv::Mat tempImage(frame->height, frame->width, CV_16UC1, frame->data, 0);
-        rawImage = tempImage.clone();
-        if (frame->sequence != mLeptonFrameID)
-        {
-            timeStamp = static_cast<double>(chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
-            mLeptonFrameID = frame->sequence; // Considering it is monotically increasing
+		Frame f;
+		cv::Mat tempImage(frame->height, frame->width, _lepton_format_to_cv_format[prop->format], frame->data, 0);
+		f.frame = tempImage.clone();
+		if(prop->format == UVC_FRAME_FORMAT_Y16){
+			if (frame->sequence != mLeptonFrameID)
+			{
+				timeStamp = static_cast<double>(chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+				mLeptonFrameID = frame->sequence; // Considering it is monotically increasing
 #ifdef WRITE_MODULE_TS
-            lepton_timestamps << timeStamp << " " << mLeptonFrameID << " "
-                              << "0" << std::endl;
+				lepton_timestamps << timeStamp << " " << mLeptonFrameID << " "
+								  << "0" << std::endl;
 #endif
-        }
+			}
+		}
+		f.timestamp = timeStamp;
+		originalCallback(f, mDeviceSerialNumber);
     }
-#endif
+
     cbExitTime = cv::getTickCount();
 }
 
@@ -100,22 +100,26 @@ int LeptonCamera::InitDevice()
             LeptonCamera::m_portDesc.userPtr = this;
             SetParams(devh, LeptonCamera::m_portDesc);
 
-#ifdef LEPTON_GRAY8_SETTINGS
-            ctrl_res = uvc_get_stream_ctrl_format_size(
-                devh, &ctrl,            /* result stored in ctrl */
-                UVC_FRAME_FORMAT_GRAY8, /* YUV 422, aka YUV 4:2:2. try _COMPRESSED, UVC_FRAME_FORMAT_UYVY*/
-                160, 120, 9             /* width, height, fps */
-            );
-#endif
-
-#ifdef LEPTON_Y16_SETTINGS
-            ctrl_res = uvc_get_stream_ctrl_format_size(
-                devh, &ctrl,          /* result stored in ctrl */
-                UVC_FRAME_FORMAT_Y16, /*UVC_FRAME_FORMAT_GRAY8, YUV 422, aka YUV 4:2:2. try _COMPRESSED, UVC_FRAME_FORMAT_UYVY*/
-                160, 120, 9           /* width, height, fps */
-            );
-#endif
-			initialized = true;
+			if(prop->format == UVC_FRAME_FORMAT_GRAY8){
+				ctrl_res = uvc_get_stream_ctrl_format_size(
+					devh, &ctrl,            /* result stored in ctrl */
+					UVC_FRAME_FORMAT_GRAY8, /* YUV 422, aka YUV 4:2:2. try _COMPRESSED, UVC_FRAME_FORMAT_UYVY*/
+					prop->frameWidth, prop->frameHeight, prop->frameRate             /* width, height, fps */
+				);
+				initialized = true;
+			}
+			else if(prop->format == UVC_FRAME_FORMAT_Y16){
+				ctrl_res = uvc_get_stream_ctrl_format_size(
+					devh, &ctrl,          /* result stored in ctrl */
+					UVC_FRAME_FORMAT_Y16, /*UVC_FRAME_FORMAT_GRAY8, YUV 422, aka YUV 4:2:2. try _COMPRESSED, UVC_FRAME_FORMAT_UYVY*/
+					prop->frameWidth, prop->frameHeight, prop->frameRate           /* width, height, fps */
+				);
+				initialized = true;
+			}
+			else{
+				initialized = false;
+				std::cout<<"Invalid Sensor Frame Type"<<std::endl;
+			}
         }
         /* Release the device descriptor */
     }
@@ -136,13 +140,13 @@ bool LeptonCamera::start(){
 	{
 		// Start the video stream. The library will call user function LeptonCallback:
 		res = uvc_start_streaming(devh, &ctrl, LeptonCamera::LeptonCallback, this, 0);
-#ifdef LEPTON_GRAY8_SETTINGS
-		SendGray8Settings(m_portDesc);
-#endif
+		if(prop->format == UVC_FRAME_FORMAT_GRAY8){
+			SendGray8Settings(m_portDesc);
+		}
+		else if(prop->format == UVC_FRAME_FORMAT_Y16){
+			SendY16Settings(m_portDesc);
+		}
 
-#ifdef LEPTON_Y16_SETTINGS
-		SendY16Settings(m_portDesc);
-#endif
 		if (res < 0)
 		{
 			stopCapture = true;

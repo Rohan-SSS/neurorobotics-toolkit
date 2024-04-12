@@ -9,12 +9,13 @@ void CheckUniqueness(cv::Mat, cv::Mat, bool &);
 std::ofstream LeptonCameraSync::lepton_timestamps("lepton_timestamps.txt", std::ios::out);
 #endif
 
-LeptonCameraSync::LeptonCameraSync(uvc_device_t* d)
+LeptonCameraSync::LeptonCameraSync(uvc_device_t* d, std::function<void(Frame, sensor_id)> cb)
 {
     LeptonCameraSync::rawImage = cv::Mat();
     LeptonCameraSync::mLeptonFrameID = 0;
     LeptonCameraSync::timeStamp = 0;
 	LeptonCameraSync::dev = d;
+	LeptonCameraSync::originalCallback = cb;
     keepReading = true;
     stopCapture = false;
     isFrameAvailable = false;
@@ -41,7 +42,8 @@ void LeptonCameraSync::LeptonCallback(uvc_frame_t *frame, void *ptr)
 #ifdef LEPTON_GRAY8_SETTINGS
     {
         std::unique_lock<std::mutex> lock(mFrameLock);
-        rawImage = cv::Mat(frame->height, frame->width, CV_8UC1, frame->data, 0);
+		Frame f;
+        f.frame = cv::Mat(frame->height, frame->width, CV_8UC1, frame->data, 0);
     }
 #endif
 
@@ -175,7 +177,6 @@ void LeptonCameraSync::GetImage(cv::Mat &im, double &ts, int &seq_id)
             std::cout << "Initial Frame Captured \t";
         }
         seq_id = mLeptonFrameID;
-        PrevId = mLeptonFrameID;
         ts = timeStamp;
         std::cout << std::setprecision(15) << timeStamp << std::endl;
         std::cout << mLeptonFrameID << std::endl;
@@ -300,6 +301,7 @@ void LeptonCameraSync::ReadPulse()
                 PrevState = State;
                 if (State == true)
                     StateTransition = true;
+				IsInitial = false;
             }
             else
             {
@@ -316,6 +318,7 @@ void LeptonCameraSync::ReadPulse()
                 PrevState = State;
             }
             int val = UpdatetimeStamp();
+			publishFrame();
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
         
@@ -338,4 +341,23 @@ int LeptonCameraSync::UpdatetimeStamp()
     {
         return 0;
     }
+}
+
+bool LeptonCameraSync::publishFrame(){
+	if(StateTransition){
+		Frame f;
+        std::unique_lock<std::mutex> locker(mFrameLock);
+        if ((mLeptonFrameID != PrevId) && (!rawImage.empty()) && (PrevtimeStamp != timeStamp))
+        { // StateTransition checks for Pulse Previd checks for callback function and rawImage checks for data sanity
+			rawImage.copyTo(f.frame);
+			f.timestamp = timeStamp;
+			originalCallback(f, mDeviceSerialNumber);
+		}
+        PrevId = mLeptonFrameID;
+        PrevtimeStamp = timeStamp;
+		return true;
+	}
+	else{
+		return false;
+	}
 }

@@ -1,5 +1,4 @@
 #include "opencv2/opencv.hpp"
-#include <librealsense2/rs.hpp>
 
 struct Frame{
 	public:
