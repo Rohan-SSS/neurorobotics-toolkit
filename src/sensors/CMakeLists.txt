@@ -42,7 +42,11 @@ add_executable(kalibr_realsense_listener
 # Lepton executables
 add_executable(lepton_talker
 	src/main/lepton_publisher.cpp
-	src/lepton/lepton35.cpp)
+	src/lepton/lepton35.cpp
+	src/lepton/LeptonBase.cpp
+	src/lepton/LeptonCamera.cpp
+	src/lepton/GPIO.cpp
+	src/lepton/LeptonCameraSync.cpp)
 
 ament_target_dependencies(realsense_talker
 	rclcpp
@@ -84,10 +88,9 @@ target_include_directories(kalibr_realsense_listener PUBLIC /ws/SkyNet/Sensor/in
 target_include_directories(lepton_talker
 	PUBLIC ${OpenCV_INCLUDE_DIRS}
 	PUBLIC ${PROJECT_SOURCE_DIR}/include
-	PUBLIC ${PROJECT_SOURCE_DIR}/ext/LeptonSDK/include
-	PUBLIC ${PROJECT_SOURCE_DIR}/ext/libuvc/include
-	PUBLIC ${PROJECT_SOURCE_DIR}/ext/libuvc/include/libuvc
-	PUBLIC ${PROJECT_SOURCE_DIR}/ext/libuvc/build/libuvc)
+  	PUBLIC ${PROJECT_SOURCE_DIR}/ext/LeptonSDK/include
+ 	PUBLIC ${LIBUSB_INCLUDE_DIR}
+  	PUBLIC ${PROJECT_SOURCE_DIR}/ext/libuvc/include)
 
 target_link_libraries(realsense_talker
 	${OpenCV_LIBS}
@@ -101,7 +104,9 @@ target_link_libraries(kalibr_realsense_listener
 target_link_libraries(lepton_talker
 	${OpenCV_LIBS}
 	uvc
-	LeptonSDK)
+	LeptonSDK
+	pthread
+	${CMAKE_THREAD_LIBS_INIT})
 
 # uncomment the following section in order to fill in
 # further dependencies manually.

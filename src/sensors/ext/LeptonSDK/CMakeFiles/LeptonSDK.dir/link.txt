@@ -1,2 +1,0 @@
-/usr/bin/ar qc libLeptonSDK.a  CMakeFiles/LeptonSDK.dir/src/crc16fast.c.o CMakeFiles/LeptonSDK.dir/src/LEPTON_AGC.c.o CMakeFiles/LeptonSDK.dir/src/LEPTON_OEM.c.o CMakeFiles/LeptonSDK.dir/src/LEPTON_RAD.c.o CMakeFiles/LeptonSDK.dir/src/LEPTON_SDK.c.o CMakeFiles/LeptonSDK.dir/src/LEPTON_SYS.c.o CMakeFiles/LeptonSDK.dir/src/LEPTON_VID.c.o
-/usr/bin/ranlib libLeptonSDK.a
