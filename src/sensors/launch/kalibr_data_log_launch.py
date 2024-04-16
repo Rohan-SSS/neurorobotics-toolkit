@@ -16,6 +16,12 @@ def generate_launch_description():
             name='realsense_talker'),
         launch_ros.actions.Node(
             package='sensors',
+            executable='lepton_talker',
+            arguments=['--ros-args', '--log-level', "INFO"],
+            output='screen',
+            name='lepton_talker'),
+        launch_ros.actions.Node(
+            package='sensors',
             executable='kalibr_realsense_listener',
             output='screen',
             arguments=['--ros-args', '--log-level', 'INFO'],

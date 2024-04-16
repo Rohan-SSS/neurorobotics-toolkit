@@ -33,7 +33,7 @@ add_executable(realsense_talker
 	src/realsense/publishers.cpp
 	src/realsense/d455.cpp)
 add_executable(debug_realsense_listener
-	src/main/subscriber.cpp
+	src/main/realsense_debug_subscriber.cpp
 	src/realsense/subscribers.cpp)
 add_executable(kalibr_realsense_listener
 	src/main/realsense_kalibr_subscriber.cpp
@@ -48,6 +48,10 @@ add_executable(lepton_talker
 	src/lepton/LeptonCamera.cpp
 	src/lepton/GPIO.cpp
 	src/lepton/LeptonCameraSync.cpp)
+add_executable(debug_lepton_listener
+	src/main/lepton_debug_subscriber.cpp
+	src/common/subscribers.cpp
+)
 
 ament_target_dependencies(realsense_talker
 	rclcpp
@@ -73,6 +77,11 @@ ament_target_dependencies(lepton_talker
 	sensor_msgs
 	cv_bridge
 	message_filters)
+ament_target_dependencies(debug_lepton_listener
+	rclcpp
+	std_msgs
+	sensor_msgs
+	cv_bridge)
 
 target_include_directories(realsense_talker
 	PUBLIC ${OpenCV_INCLUDE_DIRS} 
@@ -92,6 +101,10 @@ target_include_directories(lepton_talker
   	PUBLIC ${PROJECT_SOURCE_DIR}/ext/LeptonSDK/include
  	PUBLIC ${LIBUSB_INCLUDE_DIR}
   	PUBLIC ${PROJECT_SOURCE_DIR}/ext/libuvc/include)
+target_include_directories(debug_lepton_listener
+	PUBLIC ${OpenCV_INCLUDE_DIRS}
+	PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
 
 target_link_libraries(realsense_talker
 	${OpenCV_LIBS}
@@ -108,6 +121,9 @@ target_link_libraries(lepton_talker
 	LeptonSDK
 	pthread
 	${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(debug_lepton_listener
+	${OpenCV_LIBS}
+)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -128,6 +144,7 @@ install(TARGETS
   debug_realsense_listener
   kalibr_realsense_listener
   lepton_talker
+  debug_lepton_listener
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY

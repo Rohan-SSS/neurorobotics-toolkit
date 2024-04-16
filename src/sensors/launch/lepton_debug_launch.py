@@ -14,10 +14,10 @@ def generate_launch_description():
             arguments=['--ros-args', '--log-level', "INFO"],
             output='screen',
             name='talker'),
-        # launch_ros.actions.Node(
-        #     package='sensors',
-        #     executable='debug_realsense_listener',
-        #     output='screen',
-        #     arguments=['--ros-args', '--log-level', 'INFO',],
-        #     name='listener'),
+        launch_ros.actions.Node(
+            package='sensors',
+            executable='debug_lepton_listener',
+            output='screen',
+            arguments=['--ros-args', '--log-level', 'INFO',],
+            name='listener'),
   ])
