@@ -7,7 +7,8 @@ int main(int argc, char * argv[]){
 	LeptonSensorProperties thermal;
 	thermal.frameWidth = 160;
 	thermal.frameHeight = 120;
-	thermal.format = UVC_FRAME_FORMAT_Y16;
+	thermal.frameRate = 9;
+	thermal.format = UVC_FRAME_FORMAT_GRAY8;
 	props.push_back(thermal);
 	
 	std::string nodeName = "lepton_node";

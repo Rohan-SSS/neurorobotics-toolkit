@@ -191,7 +191,8 @@ int LeptonBase::SendGray8Settings(LEP_CAMERA_PORT_DESC_T &port)
     LEP_SetSysFfcShutterModeObj(&port, ffcShutterProp);
 
     LEP_GetSysFfcShutterModeObj(&port, &ffcShutterProp);
-    // std::cout << "Shutter Mode "<< ffcShutterProp.shutterMode << std::endl;
+    std::cout << "Shutter Mode "<< ffcShutterProp.shutterMode << std::endl;
+    return 0;
 }
 
 /* --------------------------------------------------------------------- */
