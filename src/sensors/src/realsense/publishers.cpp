@@ -10,6 +10,7 @@ RealSensePublisherNode::RealSensePublisherNode(std::string nodeName, std::vector
 		bool isVideo = topicPair.second;
 		addStreamPublisher(topic_name, id, isVideo);
 	}
+	std::cout<<"Added stream publishers"<<std::endl;
 
 	std::function<void(Frame, sensor_id)> fcb = [this](Frame frame, sensor_id id){
 		frameCallback(frame, id);	

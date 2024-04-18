@@ -34,34 +34,3 @@ class SyncedSubscriber: public rclcpp::Node{
 		int count;
 };
 
-typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, sensor_msgs::msg::Imu> RealSenseKalibrIMUPolicy;
-typedef message_filters::Synchronizer<RealSenseKalibrIMUPolicy> RealSenseKalibrIMUSyncer;
-
-
-bool createDirectory(std::string dirPath);
-
-class RealSenseKalibrSyncedIMUSubscriber: public rclcpp::Node{
-	public:
-		RealSenseKalibrSyncedIMUSubscriber(std::string node_name, std::string logDir);
-		void imuCallback(
-				const sensor_msgs::msg::Imu::ConstSharedPtr &accel,
-				const sensor_msgs::msg::Imu::ConstSharedPtr &gyro);
-		void frameCallback(const sensor_msgs::msg::Image::SharedPtr infrared);
-	private:
-		message_filters::Subscriber<sensor_msgs::msg::Imu> accel;
-		message_filters::Subscriber<sensor_msgs::msg::Imu> gyro;
-		rclcpp::callback_group::CallbackGroup::SharedPtr group1;
-		rclcpp::callback_group::CallbackGroup::SharedPtr group2;
-		rclcpp::SubscriptionOptions options1;
-		rclcpp::SubscriptionOptions options2;
-		rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr infrared;
-		std::shared_ptr<RealSenseKalibrIMUSyncer> syncImu;
-		int count = 0, count2 = 0;
-		std::ofstream imuLogFile;
-		std::string imuLogFilePath;
-		std::string infraredLogDir;
-		bool closeFileAfterWrite = false;
-		const std::string INFRARED_WINDOW = "Infrared window";
-
-		bool logIMUToFile(std::string log);
-};
