@@ -44,22 +44,34 @@ void LeptonCamera::LeptonCallback(uvc_frame_t *frame, void *ptr)
     {
         std::unique_lock<std::mutex> lock(mFrameLock);
 		Frame f;
+        
+        
 		cv::Mat tempImage(frame->height, frame->width, _lepton_format_to_cv_format[prop->format], frame->data, 0);
+        //std::cout<<"is tempImg empty "<<tempImage.empty()<<std::endl;
+		//cv::Mat tempImage(frame->height, frame->width, "mono8", frame->data, 0);
 		f.frame = tempImage.clone();
-		if(prop->format == UVC_FRAME_FORMAT_Y16){
+        f.height = frame->height;
+        f.width = frame->width;
+        
+        //std::wait
+		if(prop->format == UVC_FRAME_FORMAT_Y16)
+        {
 			if (frame->sequence != mLeptonFrameID)
 			{
 				timeStamp = static_cast<double>(chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
 				mLeptonFrameID = frame->sequence; // Considering it is monotically increasing
-#ifdef WRITE_MODULE_TS
-				lepton_timestamps << timeStamp << " " << mLeptonFrameID << " "
-								  << "0" << std::endl;
-#endif
+                #ifdef WRITE_MODULE_TS
+                                lepton_timestamps << timeStamp << " " << mLeptonFrameID << " "
+                                                << "0" << std::endl;
+                #endif
 			}
 		}
 		f.timestamp = timeStamp;
-        //std::cout<<"Device Serial Number created "<<mDeviceSerialNumber<<std::endl;
-		originalCallback(f, mDeviceSerialNumber);
+        f.format = _lepton_format_to_ros_format[prop->format];
+        
+		
+        originalCallback(f, mDeviceSerialNumber);
+        
     }
 
     cbExitTime = cv::getTickCount();
@@ -85,7 +97,7 @@ int LeptonCamera::InitDevice()
             uvc_error_t dev_error;
             mDeviceDescriptor = NULL;
             dev_error = uvc_get_device_descriptor(dev, &mDeviceDescriptor);
-            std::cout<<"dev_error is "<<dev_error<<std::endl; 
+            
             if (dev_error == UVC_SUCCESS)
             {
                 mDeviceSerialNumber = std::string(mDeviceDescriptor->serialNumber);
@@ -100,10 +112,9 @@ int LeptonCamera::InitDevice()
             LeptonCamera::m_portDesc.portType = LEP_CCI_UVC;
             LeptonCamera::m_portDesc.userPtr = this;
             SetParams(devh, LeptonCamera::m_portDesc);
-            std::cout<<"uvc frame format is "<<prop->format<<"       "<<UVC_FRAME_FORMAT_Y16<<"       "<<ctrl_res<<std::endl;     
-			std::cout<<prop->frameWidth<<"   "<<prop->frameHeight<<"    "<<prop->frameRate<<"   "<<std::endl;
+            
 			if(prop->format == UVC_FRAME_FORMAT_GRAY8){
-                std::cout<<"here, frame format gray8"<<std::endl;
+                
 				ctrl_res = uvc_get_stream_ctrl_format_size(
 					devh, &ctrl,            /* result stored in ctrl */
 					UVC_FRAME_FORMAT_GRAY8, /* YUV 422, aka YUV 4:2:2. try _COMPRESSED, UVC_FRAME_FORMAT_UYVY*/
@@ -112,7 +123,7 @@ int LeptonCamera::InitDevice()
 				initialized = true;
 			}
 			else if(prop->format == UVC_FRAME_FORMAT_Y16){
-				std::cout<<"uvc frame format is Y16 "<<std::endl;
+				
 				//ctrl_res = uvc_get_stream_ctrl_format_size(
 				//	devh, &ctrl,          /* result stored in ctrl */
 				//	UVC_FRAME_FORMAT_Y16, /*UVC_FRAME_FORMAT_GRAY8, YUV 422, aka YUV 4:2:2. try _COMPRESSED, UVC_FRAME_FORMAT_UYVY*/
@@ -125,7 +136,7 @@ int LeptonCamera::InitDevice()
 				initialized = false;
 				std::cout<<"Invalid Sensor Frame Type"<<std::endl;
 			}
-			std::cout<<"ctrl_res value is "<<ctrl_res<<std::endl;
+			
         }
         /* Release the device descriptor */
     }
@@ -149,16 +160,16 @@ bool LeptonCamera::start(){
 	{
 
 		// Start the video stream. The library will call user function LeptonCallback:
-		std::cout<<"before streaming "<<std::endl;
+		
 		res = uvc_start_streaming(devh, &ctrl, LeptonCamera::LeptonCallback, this, 0);
-		std::cout<<"after streaming "<<std::endl;
+		
 		if(prop->format == UVC_FRAME_FORMAT_GRAY8){
 			SendGray8Settings(m_portDesc);
 		}
 		else if(prop->format == UVC_FRAME_FORMAT_Y16){
 			SendY16Settings(m_portDesc);
 		}
-		std::cout<<" res "<<res<<std::endl;
+		
 		if (res < 0)
 		{
 			stopCapture = true;

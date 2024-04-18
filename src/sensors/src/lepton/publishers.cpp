@@ -12,18 +12,19 @@ LeptonPublisherNode::LeptonPublisherNode(std::string &nodeName, std::vector<Lept
 	};
 
 	hub->setup(props, cb);
-	std::cout<<"about to start setup done"<<std::endl;
 	int index = 0;
 	for(LeptonBase* sensor: hub->sensors){
-		std::cout<<"********************************Device Serial Number inside publisher node "<<sensor->mDeviceSerialNumber<<std::endl;
-		const std::string topic_name = "~/Lepton35/device_" + std::to_string(index) + "/thermal";
+		//image_transport::ImageTransport it_(node);
+		const std::string topic_name = "~/Lepton35/device_" + std::to_string(index) + "/thermal" ;
 		_frame_publishers[sensor->mDeviceSerialNumber] = rclcpp::Node::create_publisher<sensor_msgs::msg::Image>(topic_name, 10);
 		index++;
 	}
 	hub->start();
+	
 }
 
 void LeptonPublisherNode::frameCallback(Frame frame, sensor_id id){
+	
 	RCLCPP_DEBUG(this->get_logger(), "frame arrived");
 	rclcpp::Time t(frame.timestamp * 1e3);
 	if(_frame_publishers.find(id) != _frame_publishers.end()){
