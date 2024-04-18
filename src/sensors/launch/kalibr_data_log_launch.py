@@ -22,8 +22,14 @@ def generate_launch_description():
             name='lepton_talker'),
         launch_ros.actions.Node(
             package='sensors',
-            executable='kalibr_realsense_listener',
+            executable='kalibr_listener',
             output='screen',
             arguments=['--ros-args', '--log-level', 'INFO'],
-            name='kalibr_realsense_listener'),
-  ])
+            name='kalibr_listener',
+            parameters = [{
+                "realsense_talker_node_name": "realsense_talker",
+                "realsense_device_name": "Intel_RealSense_D455",
+                "lepton_talker_node_name": "lepton_talker",
+                "lepton_device_name": "device_0"
+                }])
+        ])

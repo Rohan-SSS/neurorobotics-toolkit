@@ -35,10 +35,6 @@ add_executable(realsense_talker
 add_executable(debug_realsense_listener
 	src/main/realsense_debug_subscriber.cpp
 	src/realsense/subscribers.cpp)
-add_executable(kalibr_realsense_listener
-	src/main/realsense_kalibr_subscriber.cpp
-	src/realsense/subscribers.cpp)
-
 # Lepton executables
 add_executable(lepton_talker
 	src/main/lepton_publisher.cpp
@@ -50,8 +46,11 @@ add_executable(lepton_talker
 	src/lepton/LeptonCameraSync.cpp)
 add_executable(debug_lepton_listener
 	src/main/lepton_debug_subscriber.cpp
-	src/common/subscribers.cpp
-)
+	src/common/subscribers.cpp)
+# Calibration executables
+add_executable(kalibr_listener
+	src/main/kalibr_subscriber.cpp
+	src/calibration/subscribers.cpp)
 
 ament_target_dependencies(realsense_talker
 	rclcpp
@@ -65,7 +64,7 @@ ament_target_dependencies(debug_realsense_listener
 	sensor_msgs
 	cv_bridge
 	message_filters)
-ament_target_dependencies(kalibr_realsense_listener
+ament_target_dependencies(kalibr_listener
 	rclcpp
 	std_msgs
 	sensor_msgs
@@ -91,7 +90,7 @@ target_include_directories(debug_realsense_listener
 	PUBLIC ${OpenCV_INCLUDE_DIRS} 
 	PUBLCI ${PROJECT_SOURCE_DIR}/include
 	PUBLIC ${message_filters_INCLUDE_DIRS})
-target_include_directories(kalibr_realsense_listener PUBLIC /ws/SkyNet/Sensor/include
+target_include_directories(kalibr_listener PUBLIC /ws/SkyNet/Sensor/include
 	PUBLIC ${OpenCV_INCLUDE_DIRS}
 	PUBLIC ${PROJECT_SOURCE_DIR}/include
 	PUBLIC ${message_filters_INCLUDE_DIRS})
@@ -112,7 +111,7 @@ target_link_libraries(realsense_talker
 target_link_libraries(debug_realsense_listener
 	${OpenCV_LIBS}
 	${realsense2_LIBRARY})
-target_link_libraries(kalibr_realsense_listener
+target_link_libraries(kalibr_listener
 	${OpenCV_LIBS}
 	${realsense2_LIBRARY})
 target_link_libraries(lepton_talker
@@ -142,7 +141,7 @@ endif()
 install(TARGETS
   realsense_talker
   debug_realsense_listener
-  kalibr_realsense_listener
+  kalibr_listener
   lepton_talker
   debug_lepton_listener
   DESTINATION lib/${PROJECT_NAME})
