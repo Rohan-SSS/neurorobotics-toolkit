@@ -24,9 +24,9 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	std::string device_name = this->get_parameter("realsense_device_name").as_string();
 	std::string lepton_talker_name = this->get_parameter("lepton_talker_node_name").as_string();
 	std::string lepton_device_name = this->get_parameter("lepton_device_name").as_string();
-	const std::string ir_topic = "/" + talker_name + "/" + device_name + "/camera/infrared"; 
-	const std::string accel_topic = "/" + talker_name + "/" + device_name + "/motion/accel"; 
-	const std::string gyro_topic = "/" + talker_name + "/" + device_name + "/motion/gyro"; 
+	const std::string ir_topic = "/" + talker_name + "/" + device_name + "/device_0/camera/infrared/stream_1"; 
+	const std::string accel_topic = "/" + talker_name + "/" + device_name + "/device_0/motion/accel/stream_0"; 
+	const std::string gyro_topic = "/" + talker_name + "/" + device_name + "/device_0/motion/gyro/stream_0"; 
 	const std::string thermal_topic = "/" + lepton_talker_name +  "/Lepton35/" + lepton_device_name + "/thermal";
 
 	// Logging Setup for IMU
@@ -39,7 +39,7 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	RCLCPP_INFO(this->get_logger(), "Created file for logging IMU");
 	RCLCPP_INFO(this->get_logger(), "Creating folders for infrared image logging");
 	// IMU subscription
-	options1.callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+	options1.callback_group = create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
 	accel.subscribe(this, accel_topic, rmw_qos_profile_default, options1);
 	gyro.subscribe(this, gyro_topic, rmw_qos_profile_default, options1);
 	RCLCPP_DEBUG(this->get_logger(), "All 2 IMU subscriptions created");
@@ -53,7 +53,7 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 		RCLCPP_INFO(this->get_logger(), "Created new folder for logging infrared data");
 	}
 	// Infrared Subscription at 20 Hz
-	options2.callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+	options2.callback_group = create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
 	infrared = this->create_subscription<sensor_msgs::msg::Image>(
 			ir_topic,
 			10,
@@ -76,13 +76,34 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	if(createDirectory(syncedLogDir + "infrared/")){
 		RCLCPP_INFO(this->get_logger(), "Created new folder for logging synced infrared data");
 	}
-	options3.callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+	options3.callback_group = create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
 	infrared_synced.subscribe(this, ir_topic, rmw_qos_profile_default, options3);
 	thermal_synced.subscribe(this, thermal_topic, rmw_qos_profile_default, options3);
 	RCLCPP_DEBUG(this->get_logger(), "All 2 Synced Image subscriptions created");
-	syncImage = std::make_shared<KalibrImageSyncer>(KalibrImagePolicy(10), infrared_synced, thermal_synced);
-	syncImage->registerCallback(std::bind(&KalibrSubscriber::syncedFrameCallback, this, std::placeholders::_1, std::placeholders::_2));
+	/*%%%%%%%%%%%%%%%%% Debug %%%%%%%%%%%%%%%%%%%%%%*/
+	// std::string infra_s = std::to_string(infrared_synced.header.stamp.sec);
+	// std::string infra_ns = std::to_string(infrared_synced.header.stamp.nanosec);
+	// std::string thermal_s = std::to_string(thermal->header.stamp.sec);
+	// std::string thermal_ns = std::to_string(thermal->header.stamp.nanosec);
+	// std::cout<<"Infrared timestamp in s-ns"<<infra_s<<"-"<<infra_ns<<std::endl;
+	// std::cout<<"Infrared timestamp in s-ns"<<infra_s<<"-"<<infra_ns<<std::endl;
+	/*%%%%%%%%%%%%%%%%% Debug %%%%%%%%%%%%%%%%%%%%%%*/
+	
+	rclcpp::Duration _epsilon(0,500000);
+	// 
+	
+	syncImage_ = std::make_shared<KalibrImageSyncer>(KalibrImagePolicy(10), infrared_synced, thermal_synced);
+	for(int i=0; i<9; i++)
+	{
+		syncImage_->getPolicy()->setInterMessageLowerBound(0, _epsilon);
+		syncImage_->getPolicy()->setMaxIntervalDuration(rclcpp::Duration(0, 100000000));
+	}
+
+	// syncImage_->getPolicy()->InterMessageLowerBound(rclcpp::Duration(0.1,0));
+
+	syncImage_->registerCallback(std::bind(&KalibrSubscriber::syncedFrameCallback, this, std::placeholders::_1, std::placeholders::_2));
 	RCLCPP_INFO(this->get_logger(), "Started Synced Image subscriber for KalibrSubscriber");
+	
 
 }
 
@@ -96,6 +117,7 @@ std::string repeat(std::string s, int n)
 
     return s;
 }
+
 
 void KalibrSubscriber::irFrameCallback(const sensor_msgs::msg::Image::SharedPtr infrared){
 	RCLCPP_DEBUG(this->get_logger(), "Got Message");
@@ -114,7 +136,7 @@ void KalibrSubscriber::irFrameCallback(const sensor_msgs::msg::Image::SharedPtr 
 	count2++;
 
 	cv_bridge::CvImagePtr cv_ptr_infrared = cv_bridge::toCvCopy(infrared, infrared->encoding);
-	ShowManyImages("All Image Messages", 1, cv_ptr_infrared->image);
+	ShowManyImages("All Image Messages IR", 1, cv_ptr_infrared->image);
 	cv::waitKey(1);
 
 	cv::imwrite(infraredLogDir + infra_s + infra_ns + ".png", cv_ptr_infrared->image);
@@ -123,6 +145,7 @@ void KalibrSubscriber::irFrameCallback(const sensor_msgs::msg::Image::SharedPtr 
 void KalibrSubscriber::syncedFrameCallback(
 		const sensor_msgs::msg::Image::ConstSharedPtr &infrared,
 		const sensor_msgs::msg::Image::ConstSharedPtr &thermal){
+	std::cout<<"inside synced frame callback"<<std::endl;
 	RCLCPP_DEBUG(this->get_logger(), "Got Message");
 	std::string infra_s = std::to_string(infrared->header.stamp.sec);
 	std::string infra_ns = std::to_string(infrared->header.stamp.nanosec);
@@ -184,8 +207,8 @@ void KalibrSubscriber::imuCallback(
 	logIMUToFile(log);
 
 	if(count == 200){
-		RCLCPP_INFO(this->get_logger(), "Accelerometer Image timestamp    : " + accel_s + accel_ns);
-		RCLCPP_INFO(this->get_logger(), "Gyroscope Image timestamp        : " + s + ns);
+		// RCLCPP_INFO(this->get_logger(), "Accelerometer Image timestamp    : " + accel_s + accel_ns);
+		// RCLCPP_INFO(this->get_logger(), "Gyroscope Image timestamp        : " + s + ns);
 		count = 0;
 	}
 	count++;

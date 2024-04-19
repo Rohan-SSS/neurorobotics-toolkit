@@ -30,7 +30,9 @@ class KalibrSubscriber: public rclcpp::Node{
 		void syncedFrameCallback(
 				const sensor_msgs::msg::Image::ConstSharedPtr &infrared,
 				const sensor_msgs::msg::Image::ConstSharedPtr &thermal);
+		
 	private:
+		
 		message_filters::Subscriber<sensor_msgs::msg::Imu> accel;
 		message_filters::Subscriber<sensor_msgs::msg::Imu> gyro;
 		message_filters::Subscriber<sensor_msgs::msg::Image> infrared_synced;
@@ -43,7 +45,9 @@ class KalibrSubscriber: public rclcpp::Node{
 		rclcpp::SubscriptionOptions options2;
 		rclcpp::SubscriptionOptions options3;
 		std::shared_ptr<RealSenseKalibrIMUSyncer> syncImu;
-		std::shared_ptr<KalibrImageSyncer> syncImage;
+		KalibrImagePolicy policy = KalibrImagePolicy(10);
+		std::shared_ptr<KalibrImageSyncer> syncImage_;
+		
 		int count = 0, count2 = 0, count3 = 0;
 		std::ofstream imuLogFile;
 		std::string imuLogFilePath;
@@ -53,4 +57,6 @@ class KalibrSubscriber: public rclcpp::Node{
 		const std::string INFRARED_WINDOW = "Infrared window";
 
 		bool logIMUToFile(std::string log);
+
+
 };
