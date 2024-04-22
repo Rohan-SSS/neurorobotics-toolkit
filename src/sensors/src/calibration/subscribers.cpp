@@ -48,20 +48,20 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	RCLCPP_INFO(this->get_logger(), "Started IMU subscriber for KalibrSubscriber");
 
 	// Logging Setup for Infrared at Real time
-	infraredLogDir = logDir + "infrared/";
-	if(createDirectory(infraredLogDir)){
-		RCLCPP_INFO(this->get_logger(), "Created new folder for logging infrared data");
-	}
-	// Infrared Subscription at 20 Hz
-	options2.callback_group = create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
-	infrared = this->create_subscription<sensor_msgs::msg::Image>(
-			ir_topic,
-			10,
-			std::bind(&KalibrSubscriber::irFrameCallback, this, std::placeholders::_1),
-			options2);
-	// cv::namedWindow(INFRARED_WINDOW);	
-	RCLCPP_INFO(this->get_logger(), "Started Infrared Frame subscription");
-
+	// infraredLogDir = logDir + "infrared/";
+	// if(createDirectory(infraredLogDir)){
+	// 	RCLCPP_INFO(this->get_logger(), "Created new folder for logging infrared data");
+	// }
+	// // Infrared Subscription at 20 Hz
+	// options2.callback_group = create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
+	// infrared = this->create_subscription<sensor_msgs::msg::Image>(
+	// 		ir_topic,
+	// 		10,
+	// 		std::bind(&KalibrSubscriber::irFrameCallback, this, std::placeholders::_1),
+	// 		options2);
+	// // cv::namedWindow(INFRARED_WINDOW);	
+	// RCLCPP_INFO(this->get_logger(), "Started Infrared Frame subscription");
+    //
 	// Logging Setup for Synced Thermal and Infrared at Real time
 	syncedLogDir = logDir + "synced/";
 	if(createDirectory(syncedLogDir)){
@@ -94,11 +94,11 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	// 
 	
 	syncImage_ = std::make_shared<KalibrImageSyncer>(KalibrImagePolicy(10), infrared_synced, thermal_synced);
-	for(int i=0; i<9; i++)
-	{
-		syncImage_->getPolicy()->setInterMessageLowerBound(0, _epsilon);
-		syncImage_->getPolicy()->setMaxIntervalDuration(rclcpp::Duration(0, 100000000));
-	}
+	// for(int i=0; i<9; i++)
+	// {
+	// 	syncImage_->getPolicy()->setInterMessageLowerBound(0, _epsilon);
+	// 	syncImage_->getPolicy()->setMaxIntervalDuration(rclcpp::Duration(0, 100000000));
+	// }
 
 	// syncImage_->getPolicy()->InterMessageLowerBound(rclcpp::Duration(0.1,0));
 

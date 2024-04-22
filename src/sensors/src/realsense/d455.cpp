@@ -345,4 +345,5 @@ bool RealSense::start(std::vector<RealSenseSensorProperties> &props, std::functi
 		}
 		index++;
 	}
+	return true;
 }
