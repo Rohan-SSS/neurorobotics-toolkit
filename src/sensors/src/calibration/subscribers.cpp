@@ -59,7 +59,7 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 			10,
 			std::bind(&KalibrSubscriber::irFrameCallback, this, std::placeholders::_1),
 			options2);
-	cv::namedWindow(INFRARED_WINDOW);	
+	// cv::namedWindow(INFRARED_WINDOW);	
 	RCLCPP_INFO(this->get_logger(), "Started Infrared Frame subscription");
 
 	// Logging Setup for Synced Thermal and Infrared at Real time
@@ -78,6 +78,7 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	}
 	options3.callback_group = create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
 	infrared_synced.subscribe(this, ir_topic, rmw_qos_profile_default, options3);
+	// std::cout<<"*************thermal topic*************** "<<thermal_topic<<std::cout;
 	thermal_synced.subscribe(this, thermal_topic, rmw_qos_profile_default, options3);
 	RCLCPP_DEBUG(this->get_logger(), "All 2 Synced Image subscriptions created");
 	/*%%%%%%%%%%%%%%%%% Debug %%%%%%%%%%%%%%%%%%%%%%*/
@@ -145,7 +146,7 @@ void KalibrSubscriber::irFrameCallback(const sensor_msgs::msg::Image::SharedPtr 
 void KalibrSubscriber::syncedFrameCallback(
 		const sensor_msgs::msg::Image::ConstSharedPtr &infrared,
 		const sensor_msgs::msg::Image::ConstSharedPtr &thermal){
-	std::cout<<"inside synced frame callback"<<std::endl;
+	// std::cout<<"inside synced frame callback"<<std::endl;
 	RCLCPP_DEBUG(this->get_logger(), "Got Message");
 	std::string infra_s = std::to_string(infrared->header.stamp.sec);
 	std::string infra_ns = std::to_string(infrared->header.stamp.nanosec);
@@ -207,8 +208,8 @@ void KalibrSubscriber::imuCallback(
 	logIMUToFile(log);
 
 	if(count == 200){
-		// RCLCPP_INFO(this->get_logger(), "Accelerometer Image timestamp    : " + accel_s + accel_ns);
-		// RCLCPP_INFO(this->get_logger(), "Gyroscope Image timestamp        : " + s + ns);
+		RCLCPP_INFO(this->get_logger(), "Accelerometer Image timestamp    : " + accel_s + accel_ns);
+		RCLCPP_INFO(this->get_logger(), "Gyroscope Image timestamp        : " + s + ns);
 		count = 0;
 	}
 	count++;

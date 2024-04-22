@@ -66,7 +66,21 @@ void LeptonCamera::LeptonCallback(uvc_frame_t *frame, void *ptr)
                 #endif
 			}
 		}
+        else if(prop->format == UVC_FRAME_FORMAT_GRAY8)
+        {
+            if (frame->sequence != mLeptonFrameID)
+			{
+				timeStamp = static_cast<double>(chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+				mLeptonFrameID = frame->sequence; // Considering it is monotically increasing
+                #ifdef WRITE_MODULE_TS
+                                lepton_timestamps << timeStamp << " " << mLeptonFrameID << " "
+                                                << "0" << std::endl;
+                #endif
+			}
+        }
 		f.timestamp = timeStamp;
+        // std::cout<<"format of lepton "<<prop->format;
+        // std::cout<<std::endl;
         f.format = _lepton_format_to_ros_format[prop->format];
         
 		

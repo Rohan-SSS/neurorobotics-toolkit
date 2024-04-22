@@ -27,7 +27,7 @@ void LeptonPublisherNode::frameCallback(Frame frame, sensor_id id){
 	
 	RCLCPP_DEBUG(this->get_logger(), "frame arrived");
 	rclcpp::Time t(frame.timestamp * 1e6);
-	std::cout<<"time stamp of thermal in publishrer "<<frame.timestamp*1e6<<std::endl;
+	// std::cout<<"time stamp of thermal in publishrer "<<frame.timestamp*1e6<<std::endl;
 	if(_frame_publishers.find(id) != _frame_publishers.end()){
 		if(!frame.frame.empty()){
 			sensor_msgs::msg::Image::UniquePtr img_msg_ptr(new sensor_msgs::msg::Image());
