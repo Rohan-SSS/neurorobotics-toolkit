@@ -20,10 +20,15 @@ KalibrSubscriber::KalibrSubscriber(std::string node_name, std::string logDir): N
 	this->declare_parameter("realsense_device_name", "Intel_RealSense_D455");
 	this->declare_parameter("lepton_talker_node_name", "lepton_talker");
 	this->declare_parameter("lepton_device_name", "device_0");
+	this->declare_parameter("pattern_width", "6");
+	this->declare_parameter("pattern_height", "7");
 	std::string talker_name = this->get_parameter("realsense_talker_node_name").as_string();
 	std::string device_name = this->get_parameter("realsense_device_name").as_string();
 	std::string lepton_talker_name = this->get_parameter("lepton_talker_node_name").as_string();
 	std::string lepton_device_name = this->get_parameter("lepton_device_name").as_string();
+	int pattern_width = this->get_parameter("pattern_width").as_int();
+	int pattern_height = this->get_parameter("pattern_height").as_int();
+	patternSize = cv::Size(pattern_width, pattern_height);
 	const std::string ir_topic = "/" + talker_name + "/" + device_name + "/device_0/camera/infrared/stream_1"; 
 	const std::string accel_topic = "/" + talker_name + "/" + device_name + "/device_0/motion/accel/stream_0"; 
 	const std::string gyro_topic = "/" + talker_name + "/" + device_name + "/device_0/motion/gyro/stream_0"; 
@@ -143,6 +148,18 @@ void KalibrSubscriber::irFrameCallback(const sensor_msgs::msg::Image::SharedPtr 
 	cv::imwrite(infraredLogDir + infra_s + infra_ns + ".png", cv_ptr_infrared->image);
 }
 
+bool KalibrSubscriber::detectChessboardCorners(cv::Mat &img, cv::Size &patternsize, std::vector<cv::Point2f> &corners){
+	bool foundPattern;
+	cv::Mat eq_img, color_img;
+	cv::equalizeHist(img, eq_img);
+	foundPattern = cv::findChessboardCorners(
+			eq_img,
+			patternsize,
+			corners,
+			cv::CALIB_CB_ADAPTIVE_THRESH + cv::CALIB_CB_NORMALIZE_IMAGE + cv::CALIB_CB_FAST_CHECK);
+	return foundPattern;
+}
+
 void KalibrSubscriber::syncedFrameCallback(
 		const sensor_msgs::msg::Image::ConstSharedPtr &infrared,
 		const sensor_msgs::msg::Image::ConstSharedPtr &thermal){
@@ -173,8 +190,16 @@ void KalibrSubscriber::syncedFrameCallback(
 	cv_bridge::CvImagePtr cv_ptr_thermal = cv_bridge::toCvCopy(thermal, thermal->encoding);
 	ShowManyImages("All Image Messages in Synced Frame Callback", 2, cv_ptr_infrared->image, cv_ptr_thermal->image);
 	cv::waitKey(1);
-	cv::imwrite(syncedLogDir + "infrared/" + infra_s + infra_ns + ".png", cv_ptr_infrared->image);
-	cv::imwrite(syncedLogDir + "thermal/" + thermal_s + thermal_ns + ".png", cv_ptr_thermal->image);
+	// TODO mutex implementation needed here
+	// Apply mutex and also try mutex free implementation with corners vector created here
+	RSCorners.clear();
+	LeptonCorners.clear();
+	foundRSPattern = detectChessboardCorners(cv_ptr_infrared->image, patternSize, RSCorners);
+	foundLeptonPattern = detectChessboardCorners(cv_ptr_infrared->image, patternSize, LeptonCorners);
+	if(foundRSPattern && foundLeptonPattern){
+		cv::imwrite(syncedLogDir + "infrared/" + infra_s + infra_ns + ".png", cv_ptr_infrared->image);
+		cv::imwrite(syncedLogDir + "thermal/" + thermal_s + thermal_ns + ".png", cv_ptr_thermal->image);
+	}
 }
 
 void KalibrSubscriber::imuCallback(

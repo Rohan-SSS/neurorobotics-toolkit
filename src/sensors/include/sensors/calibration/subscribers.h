@@ -58,5 +58,11 @@ class KalibrSubscriber: public rclcpp::Node{
 
 		bool logIMUToFile(std::string log);
 
+		bool detectChessboardCorners(cv::Mat &img, cv::Size &patternsize, std::vector<cv::Point2f> &corners);
+		bool foundRSPattern = false;
+		bool foundLeptonPattern = false;
+		std::vector<cv::Point2f> RSCorners;
+		std::vector<cv::Point2f> LeptonCorners;
+		cv::Size patternSize;
 
 };

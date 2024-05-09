@@ -30,6 +30,8 @@ def generate_launch_description():
                 "realsense_talker_node_name": "realsense_talker",
                 "realsense_device_name": "Intel_RealSense_D455",
                 "lepton_talker_node_name": "lepton_talker",
-                "lepton_device_name": "device_0"
+                "lepton_device_name": "device_0",
+                "pattern_width": "7",
+                "pattern_height": "6"
                 }])
         ])
