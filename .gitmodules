@@ -1,3 +1,8 @@
-[submodule "src/src/message_filters"]
-	path = src/src/message_filters
-	url = https://github.com/shandilya1b/message_filters
+[submodule "src/message_filters"]
+	path = src/message_filters
+	url = git@github.com:shandilya1998/message_filters.git
+	branch = foxy
+[submodule "src/vision-opencv"]
+	path = src/vision-opencv
+	url = git@github.com:ros-perception/vision_opencv.git
+	branch = foxy
