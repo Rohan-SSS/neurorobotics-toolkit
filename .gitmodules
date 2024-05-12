@@ -6,3 +6,7 @@
 	path = src/vision-opencv
 	url = git@github.com:ros-perception/vision_opencv.git
 	branch = foxy
+[submodule "src/slam/ext/ORB_SLAM3"]
+	path = src/slam/ext/ORB_SLAM3
+	url = git@github.com:shandilya1998/ORB_SLAM3.git
+	branch = c++14_comp
