@@ -1,11 +1,11 @@
 [submodule "src/message_filters"]
 	path = src/message_filters
 	url = git@github.com:shandilya1998/message_filters.git
-	branch = foxy
+	branch = humble
 [submodule "src/vision-opencv"]
 	path = src/vision-opencv
 	url = git@github.com:ros-perception/vision_opencv.git
-	branch = foxy
+	branch = humble
 [submodule "src/slam/ext/ORB_SLAM3"]
 	path = src/slam/ext/ORB_SLAM3
 	url = git@github.com:shandilya1998/ORB_SLAM3.git
@@ -13,7 +13,7 @@
 [submodule "src/tello"]
 	path = src/tello
 	url = git@github.com:shandilya1998/tello_ros.git
-	branch = foxy
+	branch = humble
 [submodule "src/ros2_shared"]
 	path = src/ros2_shared
 	url = git@github.com:shandilya1998/ros2_shared.git
