@@ -6,10 +6,9 @@
 	path = src/vision-opencv
 	url = git@github.com:ros-perception/vision_opencv.git
 	branch = humble
-[submodule "src/slam/ext/ORB_SLAM3"]
-	path = src/slam/ext/ORB_SLAM3
-	url = git@github.com:shandilya1998/ORB_SLAM3.git
-	branch = c++14_comp
 [submodule "src/ros2_shared"]
 	path = src/ros2_shared
 	url = git@github.com:shandilya1998/ros2_shared.git
+[submodule "src/controllers/ext/tello"]
+	path = src/tello
+	url = git@github.com:shandilya1998/tello-ros2.git
