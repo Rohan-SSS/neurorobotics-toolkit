@@ -36,4 +36,9 @@ install(TARGETS
 	DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
 )
 
+install(DIRECTORY
+	launch
+	DESTINATION share/${PROJECT_NAME}/
+)
+
 ament_package()

@@ -12,3 +12,9 @@
 [submodule "src/controllers/ext/tello"]
 	path = src/tello
 	url = git@github.com:shandilya1998/tello-ros2.git
+[submodule "src/controllers/ext/raspclaws"]
+	path = src/controllers/ext/raspclaws
+	url = git@github.com:shandilya1998/Adeept_RaspClaws.git
+[submodule "src/SLAM"]
+	path = src/slam
+	url = git@github.com:shandilya1998/ros2_orb_slam3.git

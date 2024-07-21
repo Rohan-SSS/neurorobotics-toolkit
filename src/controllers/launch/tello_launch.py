@@ -33,7 +33,6 @@ def generate_launch_description():
             respawn=False
         ),
 
-        # RQT topic debug tool
         Node(
             package='rqt_gui',
             executable='rqt_gui',
@@ -65,18 +64,18 @@ def generate_launch_description():
         ),
 
         # ORB SLAM
-        # Node(
-        #     package='orbslam2',
-        #     executable='mono',
-        #     output='screen',
-        #     namespace='/',
-        #     name='orbslam',
-        #     respawn=True,
-        #     remappings=[
-        #         ('/camera', '/image_raw')
-        #     ],
-        #     arguments=['~/Git/tello-slam/libs/ORB_SLAM2/Vocabulary/ORBvoc.txt', '~/Git/tello-slam/workspace/src/orbslam2/config.yaml']
-        # ),
+        Node(
+            package='ros2_orb_slam3',
+            executable='mode_driver_node.py',
+            output='screen',
+            namespace='/',
+            name='orbslam3',
+            respawn=True,
+            remappings=[
+                ('/camera', '/image_raw')
+            ],
+            arguments=['~/Git/tello-slam/libs/ORB_SLAM2/Vocabulary/ORBvoc.txt', '~/Git/tello-slam/workspace/src/orbslam2/config.yaml']
+        ),
 
         # Camera calibration node
         # Node(
