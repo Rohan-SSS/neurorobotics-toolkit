@@ -9,7 +9,7 @@
 [submodule "src/ros2_shared"]
 	path = src/ros2_shared
 	url = git@github.com:shandilya1998/ros2_shared.git
-[submodule "src/controllers/ext/tello"]
+[submodule "src/tello"]
 	path = src/tello
 	url = git@github.com:shandilya1998/tello-ros2.git
 [submodule "src/controllers/ext/raspclaws"]

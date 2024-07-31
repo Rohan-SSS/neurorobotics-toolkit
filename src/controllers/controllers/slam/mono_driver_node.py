@@ -30,7 +30,7 @@ import copy # For deepcopying arrays
 import shutil # High level folder operation tool
 from pathlib import Path # To find the "home" directory location
 import argparse # To accept user arguments from commandline
-import natsort # To ensure all images are chosen loaded in the correct order
+# import natsort # To ensure all images are chosen loaded in the correct order
 import yaml # To manipulate YAML files for reading configuration files
 import copy # For making deepcopies of openCV matrices, python lists, numpy arrays etc.
 import numpy as np # Python Linear Algebra module
@@ -53,26 +53,29 @@ from sensor_msgs.msg import Image # http://wiki.ros.org/sensor_msgs
 from std_msgs.msg import String, Float64 # ROS2 string message template
 from cv_bridge import CvBridge, CvBridgeError # Library to convert image messages to numpy array
 from diagnostic_msgs.msg import DiagnosticStatus
-from slam.srv import SlamStartup
+from custom_interfaces.srv import StartupSlam
 
 #* Class definition
 class MonoDriver(Node):
     def __init__(self, node_name = "mono_py_node"):
         super().__init__(node_name) # Initializes the rclpy.Node class. It expects the name of the node
 
-        self.declare_parameter("settings_path","EuRoC")
+        self.declare_parameter("settings_path","/ws/config/slam/orbslam3/camera_settings.yaml")
         self.declare_parameter("camera_topic", "/camera")
-        self.declare_parameter("vocab_file_path", "")
+        self.declare_parameter("vocab_file_path", "/ws/config/slam/orbslam3/vocab.txt")
+        self.declare_parameter("slam_compute_node_name", "orbslam3_mono_node")
         # Initialize parameters to be passed from the command line (or launch file)
         self.settings_path = str(self.get_parameter('settings_path').value) 
         self.camera_topic = str(self.get_parameter('camera_topic').value)
         self.vocab_file_path = str(self.get_parameter('vocab_file_path').value)
+        self.slam_compute_node_name = str(self.get_parameter('slam_compute_node_name').value)
 
-        self.startup_slam_client = self.create_client(SlamStartup, "start_slam")
-        while not self.start_slam_client.wait_for_service(timeout_sec = 1.0):
+        self.slam_startup_client = self.create_client(StartupSlam, "/{}/start_slam".format(self.slam_compute_node_name))
+        while not self.slam_startup_client.wait_for_service(timeout_sec = 1.0):
             self.get_logger().info('service not available, waiting again.....')
-        self.startup_req = SlamStartup.Request()
-
+        self.startup_req = StartupSlam.Request()
+        response = self.send_slam_startup_request(self.settings_path, self.camera_topic, self.vocab_file_path)
+        print(response.success)
         #* Parse values sent by command line
 
         # DEBUG
@@ -104,53 +107,9 @@ class MonoDriver(Node):
 
     # ****************************************************************************************
     def send_slam_startup_request(self, settings_path, camera_topic, vocab_file_path):
-        self.startup_req.settings_path = settings_path
+        self.startup_req.config_file_path = settings_path
         self.startup_req.camera_topic = camera_topic
         self.startup_req.vocab_file_path = vocab_file_path
-        self.startup_slam_future = self.startup_slam_client.call_async(self.startup_req)
-        rclpy.spin_until_future_complete(self, self.startup_slam_future)
-        return self.startup_slam_future.result()
-    # ****************************************************************************************
-    
-    # ****************************************************************************************
-    def handshake_with_cpp_node(self):
-        """
-            Send and receive acknowledge of sent configuration settings
-        """
-        if (self.send_config == True):
-            # print(f"Sent mesasge: {self.exp_config_msg}")
-            msg = String()
-            msg.data = self.exp_config_msg
-            self.publish_exp_config_.publish(msg)
-            time.sleep(0.01)
-    # ****************************************************************************************
-    
-    # ****************************************************************************************
-    def run_py_node(self, idx, imgz_name):
-        """
-            Master function that sends the RGB image message to the CPP node
-        """
-
-        # Initialize work variables
-        img_msg = None # sensor_msgs image object
-
-        # Path to this image
-        img_look_up_path = self.imgz_seqz_dir  + imgz_name
-        timestep = float(imgz_name.split(".")[0]) # Kept if you use a custom message interface to also pass timestep value
-        self.frame_id = self.frame_id + 1  
-        #print(img_look_up_path)
-        # print(f"Frame ID: {frame_id}")
-
-        # Based on the tutorials
-        img_msg = self.br.cv2_to_imgmsg(cv2.imread(img_look_up_path), encoding="passthrough")
-        timestep_msg = Float64()
-        timestep_msg.data = timestep
-
-        # Publish RGB image and timestep, must be in the order shown below. I know not very optimum, you can use a custom message interface to send both
-        try:
-            self.publish_timestep_msg_.publish(timestep_msg) 
-            self.publish_img_msg_.publish(img_msg)
-        except CvBridgeError as e:
-            print(e)
-    # ****************************************************************************************
-        
+        self.slam_startup_future = self.slam_startup_client.call_async(self.startup_req)
+        rclpy.spin_until_future_complete(self, self.slam_startup_future)
+        return self.slam_startup_future.result()
