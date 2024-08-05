@@ -11,7 +11,7 @@
 	url = git@github.com:shandilya1998/ros2_shared.git
 [submodule "src/tello"]
 	path = src/tello
-	url = git@github.com:shandilya1998/tello-ros2.git
+	url = git@github.com:shandilya1998/tello_ros.git
 [submodule "src/controllers/ext/raspclaws"]
 	path = src/controllers/ext/raspclaws
 	url = git@github.com:shandilya1998/Adeept_RaspClaws.git
