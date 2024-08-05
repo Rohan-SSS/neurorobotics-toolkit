@@ -1,7 +1,3 @@
-[submodule "src/message_filters"]
-	path = src/message_filters
-	url = git@github.com:shandilya1998/message_filters.git
-	branch = humble
 [submodule "src/vision-opencv"]
 	path = src/vision-opencv
 	url = git@github.com:ros-perception/vision_opencv.git
