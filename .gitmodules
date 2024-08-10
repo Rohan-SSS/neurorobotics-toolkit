@@ -18,3 +18,6 @@
 [submodule "src/SLAM"]
 	path = src/slam
 	url = git@github.com:shandilya1998/ros2_orb_slam3.git
+[submodule "src/mpu6050"]
+	path = src/mpu6050
+	url = git@github.com:shandilya1998/ros2_mpu6050.git
