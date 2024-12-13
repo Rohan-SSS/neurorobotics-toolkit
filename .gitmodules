@@ -17,3 +17,6 @@
 [submodule "src/mpu6050"]
 	path = src/mpu6050
 	url = git@github.com:shandilya1998/ros2_mpu6050.git
+[submodule "src/flight_matrix_bridge"]
+	path = src/flight_matrix_bridge
+	url = git@github.com:Kawai-Senpai/Ros-flightmatrixbridge.git
