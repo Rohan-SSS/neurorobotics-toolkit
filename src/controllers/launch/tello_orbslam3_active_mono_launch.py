@@ -1,5 +1,7 @@
 import launch
 import launch_ros
+from ament_index_python.packages import get_package_share_directory
+import os
 
 def generate_launch_description():
     logger_default = "INFO"
@@ -8,6 +10,7 @@ def generate_launch_description():
             "log-level",
             default_value=[logger_default],
             description="Logging level")
+    frontier_detection_path = get_package_share_directory('frontier_detection')
     nodes = [
         # Tello driver node
         launch_ros.actions.Node(
@@ -47,6 +50,12 @@ def generate_launch_description():
             arguments=['--ros-args', '--log-level', logger],
             output='screen'
         ),
+
+        # OctoMap Builder Node
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(os.path.join(frontier_detection_path, 'launch/frontier_detection_launch.py')),
+            launch_arguments=[('log-level', logger)]
+        )
     ]
 
 
