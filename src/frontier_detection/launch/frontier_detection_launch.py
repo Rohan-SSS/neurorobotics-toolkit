@@ -19,7 +19,7 @@ def generate_launch_description():
         name='octomap_node',
         output='screen',
         parameters=[],  # Add any parameters if required
-        arguments=['--ros-args', '--log-level', 'debug']
+        arguments=['--ros-args', '--log-level', log_level]
     )
 
     return launch.LaunchDescription([

@@ -41,9 +41,11 @@ class OctoMapNode : public rclcpp::Node{
 		std::shared_ptr<OctoMap> mpGlobalMap;
 		rclcpp::TimerBase::SharedPtr mpMapPublisherTimer;
 		rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr mpMapPublisher;
+		rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr mpPointCloudPublisher;
 		std::deque<MapMsg::SharedPtr> mpMsgQueue;
 		std::mutex mpMtxMsgQueue;
 		std::thread* mpThrMsgQueueProcess;
+		sensor_msgs::msg::PointCloud2 mpRawPointCloud;
 		// rclcpp::Publisher<sens>::SharedPtr mpAnnotatedFramePublisher;
 
 		// conversion methods
@@ -51,6 +53,7 @@ class OctoMapNode : public rclcpp::Node{
 		void CreatePoint3dFromTransform(const geometry_msgs::msg::Transform& transform, octomap::point3d& point);
 		void PublishMap();
 		void UpdateMap();
+		void UpdateRawPointCloud(sensor_msgs::msg::PointCloud2& cloud);
 
 };
 #endif

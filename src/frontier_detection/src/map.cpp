@@ -10,7 +10,8 @@ void OctoMap::UpdateMap(octomap::Pointcloud &cloud, octomap::point3d &pos){
 	RCLCPP_DEBUG(mpLogger, "Size of point cloud to be added: %d in an octomap of size %d", cloud.size(), mpGlobalMap->size());
 	RCLCPP_DEBUG(mpLogger, "Point cloud reading from position- x: %f, y: %f, z: %f", pos.x(), pos.y(), pos.z());
 	std::unique_lock<std::mutex> lock(mpMtxPointCloudUpdate);
-	mpGlobalMap->insertPointCloud(cloud, pos);
+	octomap::point3d p = {0, 0, 0};
+	// mpGlobalMap->insertPointCloud(cloud, pos);
 	for (auto it = cloud.begin(); it != cloud.end(); ++it) {
         octomap::point3d endpoint = *it;
 
@@ -24,7 +25,10 @@ void OctoMap::UpdateMap(octomap::Pointcloud &cloud, octomap::point3d &pos){
         }
 
         // Mark the endpoint node as occupied
-        mpGlobalMap->updateNode(endpoint, true); // Occupied space
+		octomap::OcTreeKey key;
+		if (mpGlobalMap->coordToKeyChecked(endpoint + pos, key)){
+        	mpGlobalMap->updateNode(key, true); // Occupied space
+		}
     }
 	RCLCPP_DEBUG(mpLogger, "Updated size of octomap: %d", mpGlobalMap->size());
 
@@ -111,11 +115,30 @@ bool OctoMap::ValidateOctree() {
 OctoMapNode::OctoMapNode(std::string nodeName): Node(nodeName){
 	RCLCPP_INFO(this->get_logger(), "Creating OctoMap Node");
 	mpGlobalMap = std::make_shared<OctoMap>(this->get_logger());
+    const int num_channels = 3; // x y z
+    mpRawPointCloud.header.frame_id = "map";
+    mpRawPointCloud.height = 1;
+    mpRawPointCloud.width = 0;
+    mpRawPointCloud.is_bigendian = false;
+    mpRawPointCloud.is_dense = true;
+    mpRawPointCloud.point_step = num_channels * sizeof(float);
+    mpRawPointCloud.row_step = mpRawPointCloud.point_step * mpRawPointCloud.width;
+    mpRawPointCloud.fields.resize(num_channels);
+    std::string channel_id[] = { "x", "y", "z"};
+    for (int i = 0; i<num_channels; i++) {
+        mpRawPointCloud.fields[i].name = channel_id[i];
+        mpRawPointCloud.fields[i].offset = i * sizeof(float);
+        mpRawPointCloud.fields[i].count = 1;
+        mpRawPointCloud.fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
+    }
+
+    mpRawPointCloud.data.resize(mpRawPointCloud.row_step * mpRawPointCloud.height);
 	mpPointCloudSubscriber = this->create_subscription<MapMsg>(
 			"/orbslam3_mono_node/map_points",
 			10,
 			std::bind(&OctoMapNode::AddNewPointCloudCallback, this, std::placeholders::_1));
 	mpMapPublisher = this->create_publisher<octomap_msgs::msg::Octomap>("~/octomap", 10);
+	mpPointCloudPublisher = this->create_publisher<sensor_msgs::msg::PointCloud2>("~/point_cloud", 10);
 	mpMapPublisherTimer = this->create_wall_timer(
 		std::chrono::milliseconds(100), std::bind(&OctoMapNode::PublishMap, this)
 	);
@@ -145,10 +168,41 @@ void OctoMapNode::UpdateMap(){
 	}
 }
 
+void OctoMapNode::UpdateRawPointCloud(sensor_msgs::msg::PointCloud2& cloud) {
+
+    // Verify that both point clouds have the same fields
+    if (cloud.fields != mpRawPointCloud.fields) {
+        RCLCPP_ERROR(this->get_logger(), "PointCloud2 messages have different fields and cannot be combined.");
+		return;
+    }
+
+    // Copy header from the first cloud (modify as needed if frame alignment is required)
+    mpRawPointCloud.header = cloud.header;
+
+    // Set the output point cloud properties
+    mpRawPointCloud.height = 1; // Unordered point cloud
+    mpRawPointCloud.is_bigendian = cloud.is_bigendian;
+    mpRawPointCloud.is_dense = cloud.is_dense;
+    mpRawPointCloud.fields = cloud.fields;
+    mpRawPointCloud.point_step = cloud.point_step;
+    mpRawPointCloud.row_step = 0; // Will be updated later
+
+    // Combine point data
+    mpRawPointCloud.data.reserve(cloud.data.size() + mpRawPointCloud.data.size());
+    mpRawPointCloud.data.insert(mpRawPointCloud.data.end(), cloud.data.begin(), cloud.data.end());
+
+    // Update the total number of points
+    mpRawPointCloud.width = (cloud.width * cloud.height) + (mpRawPointCloud.width * mpRawPointCloud.height);
+    mpRawPointCloud.row_step = mpRawPointCloud.width * mpRawPointCloud.point_step;
+}
+
 void OctoMapNode::AddNewPointCloudCallback(const MapMsg::SharedPtr msg){
 	RCLCPP_DEBUG(this->get_logger(), "Adding point cloud to queue for processing");
 	std::unique_lock<std::mutex> lock(mpMtxMsgQueue);
 	mpMsgQueue.push_back(msg);
+	UpdateRawPointCloud(msg->cloud);
+	sensor_msgs::msg::PointCloud2 cloud = mpRawPointCloud;
+	mpPointCloudPublisher->publish(cloud);
 }
 
 void OctoMapNode::ConvertPointCloud2ToOctomap(const sensor_msgs::msg::PointCloud2 &cloud_msg, octomap::Pointcloud &octomap_cloud) {
