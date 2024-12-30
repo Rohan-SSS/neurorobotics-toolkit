@@ -1,4 +1,5 @@
-#include "sensors/imu_subscriber.hpp"
+#include "sensors/imu/imu_subscriber.hpp"
+
 
 IMUSubscriber::IMUSubscriber(const std::string &node_name)
     : Node(node_name)

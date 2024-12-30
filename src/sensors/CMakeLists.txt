@@ -78,7 +78,7 @@ install(TARGETS video_reader_node
 )
 
 
-add_executable(imu_logger_node src/imu_subscriber.cpp)
+add_executable(imu_logger_node src/imu/imu_subscriber.cpp)
 
 target_link_libraries(imu_logger_node
   rclcpp
