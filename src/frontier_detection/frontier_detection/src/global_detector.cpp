@@ -30,7 +30,7 @@ public:
       point.y = frontier_point.y();
       point.z = frontier_point.z();
       point_publisher_->publish(point);
-      RCLCPP_INFO(this->get_logger(), "Frontier detected at: %f, %f, %f", point.x, point.y, point.z);
+      RCLCPP_INFO(this->get_logger(), "Global frontier detected at: %f, %f, %f", point.x, point.y, point.z);
 
       // Publish visualization marker
       visualization_msgs::msg::Marker marker;
