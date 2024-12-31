@@ -37,10 +37,15 @@ target_link_libraries(RRT
 )
 
 add_executable(global_detector src/global_detector.cpp)
+add_executable(local_detector src/local_detector.cpp)
 add_executable(global_frontier_test test/global_frontier_test.cpp)
 add_executable(octomap_publisher test/octomap_publisher.cpp)
 
 target_link_libraries(global_detector
+  RRT
+  glog::glog
+)
+target_link_libraries(local_detector
   RRT
   glog::glog
 )
@@ -67,6 +72,12 @@ ament_target_dependencies(global_detector
   octomap_msgs
   visualization_msgs
 )
+ament_target_dependencies(local_detector
+  rclcpp
+  geometry_msgs
+  octomap_msgs
+  visualization_msgs
+)
 install(FILES
   map_resource/fr_079.bt
   DESTINATION share/${PROJECT_NAME}/maps
@@ -75,6 +86,7 @@ install(FILES
 install(TARGETS
   octomap_publisher
   global_detector
+  local_detector
   DESTINATION lib/${PROJECT_NAME}
 )
 

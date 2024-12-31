@@ -162,3 +162,46 @@ bool RrtFrontierDetector::FindGlobalFrontier(
   }
   return true;
 }
+
+bool RrtFrontierDetector::FindLocalFrontier(
+    Eigen::Vector3f &frontier_point, octomap::OcTree &octomap, Eigen::Vector3f current_position)
+{
+  std::vector<float> local_tree_points{current_position.x(), current_position.y(), current_position.z()};
+  flann::Matrix<float> initial(local_tree_points.data(), 1, 3);
+  flann::KDTreeIndexParams indexParams(4);
+  indexParams["dynamic_rebuild"] = true;
+  std::shared_ptr<flann::Index<flann::L2<float>>> local_index =
+      std::make_shared<flann::Index<flann::L2<float>>>(initial, indexParams, flann::L2<float>());
+  local_index->buildIndex();
+
+  SetMinMax(octomap);
+  bool frontier_found = false;
+  auto start_time = high_resolution_clock::now();
+  while (!frontier_found)
+  {
+    if (CheckForTimeout(start_time))
+    {
+      LOG(WARNING) << "Timeout reached while searching for local frontier";
+      return false;
+    }
+    Eigen::Vector3f random_point = SampleSpace(octomap.getBBXMin(), octomap.getBBXMax());
+    auto nearest_node = FindNearestNode(random_point, local_index, local_tree_points);
+    auto new_point = Steer(nearest_node, random_point);
+    auto is_unknown = CheckIfRouteContainsUnknown(octomap, nearest_node, new_point);
+    if (is_unknown)
+    {
+      frontier_found = true;
+      frontier_point = new_point;
+    }
+    else
+    {
+      auto route_free = CheckIfRouteFree(octomap, nearest_node, new_point);
+      if (route_free)
+      {
+        AddNodeToTree(new_point, global_index_, global_tree_points_);
+        LOG(INFO) << "Added node to global tree, current size: " << global_tree_points_.size() / 3;
+      }
+    }
+  }
+  return true;
+}
