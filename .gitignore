@@ -5,3 +5,5 @@ data/
 kalibr_data/
 *__pycache__/
 *.tar*
+.devcontainer
+.vscode
