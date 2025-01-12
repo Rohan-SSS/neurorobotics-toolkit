@@ -10,7 +10,6 @@ void OctoMap::UpdateMap(octomap::Pointcloud &cloud, octomap::point3d &pos){
 	RCLCPP_DEBUG(mpLogger, "Size of point cloud to be added: %d in an octomap of size %d", cloud.size(), mpGlobalMap->size());
 	RCLCPP_DEBUG(mpLogger, "Point cloud reading from position- x: %f, y: %f, z: %f", pos.x(), pos.y(), pos.z());
 	std::unique_lock<std::mutex> lock(mpMtxPointCloudUpdate);
-	octomap::point3d p = {0, 0, 0};
 	// mpGlobalMap->insertPointCloud(cloud, pos);
 	for (auto it = cloud.begin(); it != cloud.end(); ++it) {
         octomap::point3d endpoint = *it;
@@ -143,6 +142,13 @@ OctoMapNode::OctoMapNode(std::string nodeName): Node(nodeName){
 		std::chrono::milliseconds(100), std::bind(&OctoMapNode::PublishMap, this)
 	);
 	mpThrMsgQueueProcess = new std::thread(&OctoMapNode::UpdateMap, this);	
+}
+
+OctoMapNode::~OctoMapNode(){
+    if (mpMtxMsgQueue.joinable()) {
+        RCLCPP_INFO(this->get_logger(), "Joining mpMtxMsgQueue thread...");
+        mpMtxMsgQueue.join();
+    }
 }
 
 void OctoMapNode::UpdateMap(){

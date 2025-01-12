@@ -35,6 +35,7 @@ class OctoMap{
 class OctoMapNode : public rclcpp::Node{
 	public:
 		OctoMapNode(std::string nodeName);
+		~OctoMapNode();
 		void AddNewPointCloudCallback(const MapMsg::SharedPtr msg);
 	private:
 		rclcpp::Subscription<MapMsg>::SharedPtr mpPointCloudSubscriber;
