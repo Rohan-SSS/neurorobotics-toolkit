@@ -13,14 +13,14 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='frontier_detection',
-            executable='global_detector',
+            executable='global_frontier_detector',
             name='global_frontier_detector',
             output='screen',
             parameters=[{'use_sim_time': False}]
         ),
         Node(
             package='frontier_detection',
-            executable='local_detector',
+            executable='local_frontier_detector',
             name='local_frontier_detector',
             output='screen',
             parameters=[{'use_sim_time': False}]

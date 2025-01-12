@@ -208,5 +208,4 @@ ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
->>>>>>> master
 ament_package()

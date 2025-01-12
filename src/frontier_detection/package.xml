@@ -5,6 +5,7 @@
   <version>0.0.1</version>
   <description>A ROS2 package for 3d frontier detection</description>
   <maintainer email="vishwajeet@u.northwestern.edu">Vishwajeet Karmarkar</maintainer>
+  <maintainer email="shandilya@alumni.iitm.ac.in">Shreyas Shandilya</maintainer>
   <license>TODO: License declaration</license>
 
 
