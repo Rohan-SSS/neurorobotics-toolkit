@@ -8,10 +8,21 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+	sensor_msgs
+	geometry_msgs
+)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/StartupSlam.srv"
+  "msg/PointCloud3.msg"
+  DEPENDENCIES geometry_msgs sensor_msgs
   LIBRARY_NAME ${PROJECT_NAME}
  )
+#  ament_target_dependencies(${PROJECT_NAME}
+#   PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
+# )
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)

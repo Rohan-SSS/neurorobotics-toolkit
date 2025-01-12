@@ -44,10 +44,18 @@ add_executable(video_reader_node
 	src/video/common.cpp
 )
 
+add_executable(imu_logger_node
+	src/imu/imu_subscriber.cpp
+)
+
 ament_target_dependencies(video_logger_node
 	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_target_dependencies(video_reader_node
+	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+
+ament_target_dependencies(imu_logger_node
 	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
@@ -77,13 +85,6 @@ install(TARGETS video_reader_node
 	INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
-
-add_executable(imu_logger_node src/imu/imu_subscriber.cpp)
-
-target_link_libraries(imu_logger_node
-  rclcpp
-  sensor_msgs
-)
 # Install executable and necessary files
 install(TARGETS imu_logger_node
   DESTINATION lib/${PROJECT_NAME}
