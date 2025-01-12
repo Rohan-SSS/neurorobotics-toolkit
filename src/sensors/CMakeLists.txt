@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(sensors)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -42,10 +44,18 @@ add_executable(video_reader_node
 	src/video/common.cpp
 )
 
+add_executable(imu_logger_node
+	src/imu/imu_subscriber.cpp
+)
+
 ament_target_dependencies(video_logger_node
 	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_target_dependencies(video_reader_node
+	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+
+ament_target_dependencies(imu_logger_node
 	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
@@ -75,6 +85,18 @@ install(TARGETS video_reader_node
 	INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
+# Install executable and necessary files
+install(TARGETS imu_logger_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install include files
+install(DIRECTORY include/
+  DESTINATION include/
+)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 install(DIRECTORY
 	launch
 	DESTINATION share/${PROJECT_NAME}/
