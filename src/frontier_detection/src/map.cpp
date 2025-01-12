@@ -145,9 +145,9 @@ OctoMapNode::OctoMapNode(std::string nodeName): Node(nodeName){
 }
 
 OctoMapNode::~OctoMapNode(){
-    if (mpMtxMsgQueue.joinable()) {
+    if (mpThrMsgQueueProcess->joinable()) {
         RCLCPP_INFO(this->get_logger(), "Joining mpMtxMsgQueue thread...");
-        mpMtxMsgQueue.join();
+      	mpThrMsgQueueProcess->join();
     }
 }
 
