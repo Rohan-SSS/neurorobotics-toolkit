@@ -6,9 +6,13 @@ class VideoLogger{
 		VideoLogger(rclcpp::Logger logger, std::string &outputPath, VideoProperties &props);
 		~VideoLogger();
 		void run();
+		bool start();
 		int getStatus(){return mpVideoLoggerStatus;}
 		void logFrame(cv::Mat &image);
+
 	private:
+		rclcpp::Logger mpLogger;
+
 		GstElement* mpPipeline;
 		GstElement* mpAppsrc;
 		GstElement* mpVideoconvert;
@@ -23,25 +27,32 @@ class VideoLogger{
 		int mpNumChannels;
 		int mpInputDataFPS;
 		int mpOutputFrameSize;
-
 		int mpVideoLoggerStatus = 0;
 		int mpFrameCounter;
 
-		rclcpp::Logger mpLogger;
+
 };
 
-class VideoLoggerNode: public rclcpp::Node{
+class VideoLoggerNode: public rclcpp_lifecycle::LifecycleNode{
 	public:
-		VideoLoggerNode(std::string nodeName);
+		VideoLoggerNode();
 		void frameCallback(const sensor_msgs::msg::Image::ConstSharedPtr &img);
+
+		// Lifecycle transition states
+        CallbackReturn on_configure(const rclcpp_lifecycle::State &);
+        CallbackReturn on_activate(const rclcpp_lifecycle::State &);
+        CallbackReturn on_deactivate(const rclcpp_lifecycle::State &);
+        CallbackReturn on_cleanup(const rclcpp_lifecycle::State &);
+        CallbackReturn on_shutdown(const rclcpp_lifecycle::State &);
 
 	private:
 		std::string mpOutputFilePath;
+		std::string mpTopicName;
+		std::string mpImageType;
+
 		int mpOutputImageWidth;
 		int mpOutputImageHeight;
 		int mpInputDataFPS;
-		std::string mpTopicName;
-		std::string mpImageType;
 		int mpNumChannels;
 
 		rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr mpFrameSubscriber;

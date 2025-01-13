@@ -1,10 +1,19 @@
 #include "sensors/video/reader.h"
 
-int main(int argc, char **argv){
-	rclcpp::init(argc, argv);
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<VideoReaderNode>();
+    
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node->get_node_base_interface());
 
-	std::shared_ptr<VideoReaderNode> node = std::make_shared<VideoReaderNode>();
-    rclcpp::spin(node);
+    node->configure();
+    node->activate();
+    node->deactivate();
+    node->cleanup();
+    node->shutdown();
+
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }

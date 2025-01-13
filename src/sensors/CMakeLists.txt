@@ -14,6 +14,9 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(OpenCV 4.2 REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+
 # Command to check gstreamer dependencies
 pkg_check_modules(GST REQUIRED gstreamer-1.0 gstreamer-video-1.0  gstreamer-app-1.0)
 
@@ -29,6 +32,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 	cv_bridge
 	image_transport
 	std_msgs
+	rclcpp_lifecycle
+	lifecycle_msgs
 )
 
 add_executable(video_logger_node
