@@ -69,7 +69,6 @@ find_package(octomap REQUIRED)
 find_package(octomap_ros REQUIRED)
 find_package(octomap_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(glog REQUIRED)
 find_package(flann REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
@@ -97,13 +96,13 @@ include_directories(
 	${EIGEN3_INCLUDE_DIR}
 	include)
 
-add_library(RRT src/rrt/rrt.cpp)
+add_library(RRT src/rrt.cpp)
 target_link_libraries(RRT
   flann::flann
   ${OCTOMAP_LIBRARIES}
-  glog::glog
   Eigen3::Eigen
 )
+ament_target_dependencies(RRT rclcpp)
 
 add_executable(global_frontier_detector src/global_detector.cpp)
 add_executable(local_frontier_detector src/local_detector.cpp)
@@ -112,18 +111,16 @@ add_executable(octomap_publisher test/octomap_publisher.cpp)
 
 target_link_libraries(global_frontier_detector
   RRT
-  glog::glog
 )
 target_link_libraries(local_frontier_detector
   RRT
-  glog::glog
 )
 target_link_libraries(global_frontier_test
   RRT
   ${OCTOMAP_LIBRARIES}
-  glog::glog
   Eigen3::Eigen
 )
+ament_target_dependencies(global_frontier_test rclcpp)
 target_link_libraries(octomap_publisher
   ${OCTOMAP_LIBRARIES}
 )

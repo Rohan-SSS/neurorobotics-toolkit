@@ -3,8 +3,9 @@
 #include <Eigen/Dense>
 #include <filesystem>
 #include <fstream>
+#include "rclcpp/rclcpp.hpp"
 
-#include "../src/rrt/rrt.h"
+#include "frontier_detection/rrt.hpp"
 
 namespace fs = std::filesystem;
 
@@ -43,7 +44,7 @@ int main()
   std::cout << "tree->calcNumNodes(): " << tree->calcNumNodes() << std::endl;
   std::cout << "tree->getBBXMin(): " << tree->getBBXMin() << std::endl;
   std::cout << "tree->getBBXMax(): " << tree->getBBXMax() << std::endl;
-  RrtFrontierDetector rrt_frontier_detector(100, 0.1);
+  RrtFrontierDetector rrt_frontier_detector(rclcpp::get_logger("global_detector"), 100, 0.1);
 
   std::string frontier_points_csv =
       "src/frontier_detection/frontier_detection/map_resource/frontier_points.csv";

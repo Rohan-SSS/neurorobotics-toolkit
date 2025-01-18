@@ -1,108 +1,90 @@
-#include <rclcpp/rclcpp.hpp>
-#include <Eigen/Dense>
-#include <geometry_msgs/msg/point.hpp>
-#include <octomap_msgs/msg/octomap.hpp>
-#include <octomap_msgs/conversions.h>
-#include <visualization_msgs/msg/marker.hpp>
-#include "rrt/rrt.h"
+#include "frontier_detection/local_detector.hpp"
 
-class GlobalDetector : public rclcpp::Node
+LocalDetectorNode::LocalDetectorNode() : Node("global_detector"), mpDetector(this->get_logger(), 10, 0.2)
 {
-public:
-    GlobalDetector() : Node("global_detector"), detector(10, 0.2)
-    {
-        robot_position_ = Eigen::Vector3f::Zero();
-        map_subscriber_ = this->create_subscription<octomap_msgs::msg::Octomap>(
-            "octomap", 10, std::bind(&GlobalDetector::MapCallback, this, std::placeholders::_1));
+	mpRobotPosition = Eigen::Vector3f::Zero();
+	mpMapSubscriber = this->create_subscription<octomap_msgs::msg::Octomap>(
+			"octomap", 10, std::bind(&LocalDetectorNode::MapCallback, this, std::placeholders::_1));
 
-        robot_position_subscriber_ = this->create_subscription<geometry_msgs::msg::Point>(
-            "odom", 10, std::bind(&GlobalDetector::RobotPositionCallback, this, std::placeholders::_1));
+	mpRobotPositionSubscriber = this->create_subscription<geometry_msgs::msg::Point>(
+			"odom", 10, std::bind(&LocalDetectorNode::RobotPositionCallback, this, std::placeholders::_1));
 
-        point_publisher_ = this->create_publisher<geometry_msgs::msg::Point>("detected_points", 100);
-        marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
-        RCLCPP_INFO(this->get_logger(), "Global Detector node initialized");
-    }
+	mpPointPublisher = this->create_publisher<geometry_msgs::msg::Point>("detected_points", 100);
+	mpMarkerPublisher = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
+	RCLCPP_INFO(this->get_logger(), "Global Detector node initialized");
+}
 
-    void RobotPositionCallback(const geometry_msgs::msg::Point::SharedPtr msg)
-    {
-        robot_position_.x() = msg->x;
-        robot_position_.y() = msg->y;
-        robot_position_.z() = msg->z;
-    }
+void LocalDetectorNode::RobotPositionCallback(const geometry_msgs::msg::Point::SharedPtr msg)
+{
+	mpRobotPosition.x() = msg->x;
+	mpRobotPosition.y() = msg->y;
+	mpRobotPosition.z() = msg->z;
+}
 
-    void DetectFrontiers()
-    {
-        if (robot_position_.isZero())
-        {
-            RCLCPP_WARN(this->get_logger(), "Robot position not received yet");
-            return;
-        }
+void LocalDetectorNode::DetectFrontiers()
+{
+	if (mpRobotPosition.isZero())
+	{
+		RCLCPP_WARN(this->get_logger(), "Robot position not received yet");
+		return;
+	}
 
-        Eigen::Vector3f frontier_point;
-        if (detector.FindLocalFrontier(frontier_point, *octree, robot_position_))
-        {
-            geometry_msgs::msg::Point point;
-            point.x = frontier_point.x();
-            point.y = frontier_point.y();
-            point.z = frontier_point.z();
-            point_publisher_->publish(point);
-            RCLCPP_INFO(this->get_logger(), "Local frontier detected at: %f, %f, %f", point.x, point.y, point.z);
+	Eigen::Vector3f frontier_point;
+	if (mpDetector.FindLocalFrontier(frontier_point, *mpGlobalMap, mpRobotPosition))
+	{
+		geometry_msgs::msg::Point point;
+		point.x = frontier_point.x();
+		point.y = frontier_point.y();
+		point.z = frontier_point.z();
+		mpPointPublisher->publish(point);
+		RCLCPP_INFO(this->get_logger(), "Local frontier detected at: %f, %f, %f", point.x, point.y, point.z);
 
-            // Publish visualization marker
-            visualization_msgs::msg::Marker marker;
-            marker.header.frame_id = "map";
-            marker.header.stamp = this->now();
-            marker.ns = "detected_points";
-            marker.id = 0;
-            marker.type = visualization_msgs::msg::Marker::SPHERE;
-            marker.action = visualization_msgs::msg::Marker::ADD;
-            marker.pose.position.x = point.x;
-            marker.pose.position.y = point.y;
-            marker.pose.position.z = point.z;
-            marker.pose.orientation.x = 0.0;
-            marker.pose.orientation.y = 0.0;
-            marker.pose.orientation.z = 0.0;
-            marker.pose.orientation.w = 1.0;
-            marker.scale.x = 0.2;
-            marker.scale.y = 0.2;
-            marker.scale.z = 0.2;
-            marker.color.a = 1.0; // Don't forget to set the alpha!
-            marker.color.r = 0.0;
-            marker.color.g = 1.0;
-            marker.color.b = 0.0;
+		// Publish visualization marker
+		visualization_msgs::msg::Marker marker;
+		marker.header.frame_id = "map";
+		marker.header.stamp = this->now();
+		marker.ns = "detected_points";
+		marker.id = 0;
+		marker.type = visualization_msgs::msg::Marker::SPHERE;
+		marker.action = visualization_msgs::msg::Marker::ADD;
+		marker.pose.position.x = point.x;
+		marker.pose.position.y = point.y;
+		marker.pose.position.z = point.z;
+		marker.pose.orientation.x = 0.0;
+		marker.pose.orientation.y = 0.0;
+		marker.pose.orientation.z = 0.0;
+		marker.pose.orientation.w = 1.0;
+		marker.scale.x = 0.2;
+		marker.scale.y = 0.2;
+		marker.scale.z = 0.2;
+		marker.color.a = 1.0; // Don't forget to set the alpha!
+		marker.color.r = 0.0;
+		marker.color.g = 1.0;
+		marker.color.b = 0.0;
 
-            marker_publisher_->publish(marker);
-        }
-    }
+		mpMarkerPublisher->publish(marker);
+	}
+}
 
-private:
-    void MapCallback(const octomap_msgs::msg::Octomap::SharedPtr msg)
-    {
-        octomap::AbstractOcTree *tree = octomap_msgs::fullMsgToMap(*msg);
-        if (tree)
-        {
-            octree = std::shared_ptr<octomap::OcTree>(dynamic_cast<octomap::OcTree *>(tree));
-            if (octree)
-            {
-                DetectFrontiers();
-            }
-        }
-    }
-
-    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr robot_position_subscriber_;
-    rclcpp::Subscription<octomap_msgs::msg::Octomap>::SharedPtr map_subscriber_;
-    rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr point_publisher_;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
-    RrtFrontierDetector detector;
-    std::shared_ptr<octomap::OcTree> octree;
-    Eigen::Vector3f robot_position_;
-};
+void LocalDetectorNode::MapCallback(const octomap_msgs::msg::Octomap::SharedPtr msg)
+{
+	octomap::AbstractOcTree *tree = octomap_msgs::fullMsgToMap(*msg);
+	if (tree)
+	{
+		mpGlobalMap = std::shared_ptr<octomap::OcTree>(dynamic_cast<octomap::OcTree *>(tree));
+		if (mpGlobalMap)
+		{
+			DetectFrontiers();
+		}
+	}
+}
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<GlobalDetector>();
+    auto node = std::make_shared<LocalDetectorNode>();
     rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
+
 }

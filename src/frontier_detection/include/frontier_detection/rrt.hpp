@@ -1,4 +1,5 @@
 #include <octomap/octomap.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <Eigen/Dense>
 #include <chrono>
@@ -10,7 +11,7 @@
 class RrtFrontierDetector
 {
 public:
-    RrtFrontierDetector(double timeout, double steering_distance);
+    RrtFrontierDetector(rclcpp::Logger logger, double timeout, double steering_distance);
     bool FindGlobalFrontier(Eigen::Vector3f &frontier_point, octomap::OcTree &octomap);
     bool FindLocalFrontier(
         Eigen::Vector3f &frontier_point, octomap::OcTree &octomap, Eigen::Vector3f current_position);
@@ -36,4 +37,5 @@ private:
     int random_seed_{0};
     std::mt19937 generator_;
     std::uniform_real_distribution<double> uniform_dist_;
+	rclcpp::Logger mpLogger;
 };

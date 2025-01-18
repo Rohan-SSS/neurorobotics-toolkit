@@ -1,11 +1,9 @@
-#include "rrt.h"
-
-#include <glog/logging.h>
+#include "frontier_detection/rrt.hpp"
 
 using namespace std::chrono;
 
-RrtFrontierDetector::RrtFrontierDetector(double timeout, double steering_distance)
-    : timeout_(timeout), steering_distance_(steering_distance), generator_(random_seed_)
+RrtFrontierDetector::RrtFrontierDetector(rclcpp::Logger logger, double timeout, double steering_distance)
+    : mpLogger(logger), timeout_(timeout), steering_distance_(steering_distance), generator_(random_seed_)
 {
   flann::Matrix<float> initial(global_tree_points_.data(), 1, 3);
   flann::KDTreeIndexParams indexParams(4);
@@ -122,8 +120,8 @@ void RrtFrontierDetector::SetMinMax(octomap::OcTree &tree)
   }
   auto min_bound = octomap::point3d(min_x, min_y, min_z);
   auto max_bound = octomap::point3d(max_x, max_y, max_z);
-  LOG(INFO) << "Min bounds = " << min_bound.x() << " " << min_bound.y() << " " << min_bound.z() << " \n";
-  LOG(INFO) << "Max bounds = " << max_bound.x() << " " << max_bound.y() << " " << max_bound.z() << " \n";
+  RCLCPP_INFO(mpLogger, "Min bounds = %f %f %f", min_bound.x(), min_bound.y(), min_bound.z());
+  RCLCPP_INFO(mpLogger, "Max bounds = %f %f %f", max_bound.x(), max_bound.y(), max_bound.z());
   tree.setBBXMin(min_bound);
   tree.setBBXMax(max_bound);
 }
@@ -138,7 +136,7 @@ bool RrtFrontierDetector::FindGlobalFrontier(
   {
     if (CheckForTimeout(start_time))
     {
-      LOG(WARNING) << "Timeout reached while searching for global frontier";
+      RCLCPP_WARN(mpLogger, "Timeout reached while searching for global frontier");
       return false;
     }
     Eigen::Vector3f random_point = SampleSpace(octomap.getBBXMin(), octomap.getBBXMax());
@@ -156,7 +154,7 @@ bool RrtFrontierDetector::FindGlobalFrontier(
       if (route_free)
       {
         AddNodeToTree(new_point, global_index_, global_tree_points_);
-        LOG(INFO) << "Added node to global tree, current size: " << global_tree_points_.size() / 3;
+        RCLCPP_INFO(mpLogger, "Added node to global tree, current size: %f", global_tree_points_.size() / 3);
       }
     }
   }
@@ -181,7 +179,7 @@ bool RrtFrontierDetector::FindLocalFrontier(
   {
     if (CheckForTimeout(start_time))
     {
-      LOG(WARNING) << "Timeout reached while searching for local frontier";
+      RCLCPP_WARN(mpLogger, "Timeout reached while searching for local frontier");
       return false;
     }
     Eigen::Vector3f random_point = SampleSpace(octomap.getBBXMin(), octomap.getBBXMax());
@@ -199,7 +197,7 @@ bool RrtFrontierDetector::FindLocalFrontier(
       if (route_free)
       {
         AddNodeToTree(new_point, global_index_, global_tree_points_);
-        LOG(INFO) << "Added node to global tree, current size: " << global_tree_points_.size() / 3;
+        RCLCPP_INFO(mpLogger, "Added node to global tree, current size: ", global_tree_points_.size() / 3);
       }
     }
   }
