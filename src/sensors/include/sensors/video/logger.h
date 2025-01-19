@@ -30,7 +30,6 @@ class VideoLogger{
 		int mpVideoLoggerStatus = 0;
 		int mpFrameCounter;
 
-
 };
 
 class VideoLoggerNode: public rclcpp_lifecycle::LifecycleNode{
@@ -38,7 +37,6 @@ class VideoLoggerNode: public rclcpp_lifecycle::LifecycleNode{
 		VideoLoggerNode();
 		void frameCallback(const sensor_msgs::msg::Image::ConstSharedPtr &img);
 
-		// Lifecycle transition states
         CallbackReturn on_configure(const rclcpp_lifecycle::State &);
         CallbackReturn on_activate(const rclcpp_lifecycle::State &);
         CallbackReturn on_deactivate(const rclcpp_lifecycle::State &);

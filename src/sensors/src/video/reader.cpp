@@ -6,11 +6,10 @@ VideoReader::VideoReader(rclcpp::Logger logger, const std::string& inputFilePath
     mpFilesrc(nullptr), mpDemuxer(nullptr), mpQueue(nullptr), mpH264Parser(nullptr),
     mpH264Decoder(nullptr), mpVideoconvert(nullptr), mpCapsfilter(nullptr), mpAppsink(nullptr),
     loop(nullptr) {
-    
+
     gst_init(nullptr, nullptr);
 
     mpPipeline = gst_pipeline_new("video-reader-pipeline");
-
     mpFilesrc = gst_element_factory_make("filesrc", "source");
     mpDemuxer = gst_element_factory_make("qtdemux", "demuxer");
     mpQueue = gst_element_factory_make("queue", "queue");
@@ -31,7 +30,7 @@ VideoReader::VideoReader(rclcpp::Logger logger, const std::string& inputFilePath
     check_element_creation(mpAppsink, "appsink");
 
     g_object_set(mpFilesrc, "location", inputFilePath.c_str(), NULL);
-    g_object_set(mpAppsink, "emit-signals", TRUE, "sync", FALSE, NULL);
+    g_object_set(mpAppsink, "emit-signals", TRUE, "sync", TRUE, "max-lateness", 50 * GST_MSECOND, "qos", TRUE, NULL);
 
     GstCaps *caps = gst_caps_new_simple("video/x-raw",
         "format", G_TYPE_STRING, "BGR",
@@ -52,6 +51,16 @@ VideoReader::VideoReader(rclcpp::Logger logger, const std::string& inputFilePath
         }
         gst_object_unref(sink_pad);
     }), mpQueue);
+
+    g_object_set(mpQueue,
+        "max-size-buffers", 2,   
+        "max-size-time", 0,    
+        "max-size-bytes", 0,    
+        NULL);
+
+    g_object_set(mpH264Decoder,
+        "max-threads", 4,
+        NULL);
 
     g_signal_connect(mpAppsink, "new-sample", G_CALLBACK(new_sample), this);
 }
@@ -92,10 +101,8 @@ GstFlowReturn VideoReader::new_sample(GstAppSink *sink, gpointer user_data) {
                 double timestamp_seconds = (double)timestamp / GST_SECOND;
 
                 cv::Mat frame(cv::Size(1920, 1080), CV_8UC3, (void*)map.data, cv::Mat::AUTO_STEP);
-                cv::Mat safe_copy = frame.clone();
-
                 std::shared_ptr<Frame> f = std::make_shared<Frame>();
-                f->frame = safe_copy;
+                f->frame = frame.clone();
                 f->timestamp = timestamp_seconds;
                 reader->frameCallback(f);
 
@@ -152,13 +159,11 @@ void VideoReader::shutdown() {
     if (loop) {
         g_main_loop_quit(loop); 
     }
-
     if (mpPipeline) {
         gst_element_set_state(mpPipeline, GST_STATE_NULL);
         gst_object_unref(mpPipeline);
         mpPipeline = nullptr;
     }
-    
     if (loop) {
         g_main_loop_unref(loop);
         loop = nullptr;
@@ -167,12 +172,12 @@ void VideoReader::shutdown() {
 
 VideoReaderNode::VideoReaderNode() : rclcpp_lifecycle::LifecycleNode("video_reader"){
 	ParameterDescriptor topicNameDesc;
-	topicNameDesc.description = "Name of camera topic to subscribe to";
+	topicNameDesc.description = "Name of topic to publish to";
 	topicNameDesc.type = 4;
 	this->declare_parameter<std::string>("camera_topic", "/camera", topicNameDesc);
 
 	ParameterDescriptor inputFilePathDesc;
-	inputFilePathDesc.description = "Path to input file for received video";
+	inputFilePathDesc.description = "Path to input file ";
 	inputFilePathDesc.type = 4;
 	this->declare_parameter<std::string>("input_file_path", "/ws/data/src.mp4", inputFilePathDesc);
 }
@@ -227,13 +232,18 @@ void VideoReaderNode::frameCallback(std::shared_ptr<Frame> frame) {
     static rclcpp::Time last_pub_time = this->now();
     rclcpp::Time current_time = this->now();
 
-    if ((current_time - last_pub_time).seconds() >= 1.0/30.0) {
+    double target_period = 1.0/30.0;
+    if ((current_time - last_pub_time).seconds() >= target_period) {
         if(!frame->frame.empty()) {
             sensor_msgs::msg::Image img_msg;
+            std_msgs::msg::Header header;
+            header.stamp = this->now();
+
             cv_bridge::CvImage(
-                std_msgs::msg::Header(),
+                header,
                 sensor_msgs::image_encodings::RGB8,
                 frame->frame).toImageMsg(img_msg);
+
             mpFramePub->publish(img_msg);
             last_pub_time = current_time;
         }

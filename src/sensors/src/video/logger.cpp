@@ -86,39 +86,39 @@ void VideoLogger::logFrame(cv::Mat &image) {
         RCLCPP_WARN(mpLogger, "Received empty image frame");
         return;
     }
-
-    cv::Mat display_image = image.clone();
+    cv::Mat display_image = image;
 
     GstBuffer *buf = gst_buffer_new_and_alloc(mpOutputFrameSize * image.elemSize());
     if (!buf) {
         RCLCPP_ERROR(mpLogger, "Failed to allocate buffer");
         return;
     }
-
     GstMapInfo map;
     if (!gst_buffer_map(buf, &map, GST_MAP_WRITE)) {
         RCLCPP_ERROR(mpLogger, "Failed to map buffer");
-        gst_buffer_unref(buf);
+        gst_buffer_unref(buf); 
         return;
     }
 
     memcpy(map.data, image.data, mpOutputFrameSize * image.elemSize());
 
-    GST_BUFFER_PTS(buf) = GST_MSECOND * 30 * mpFrameCounter;
+    GstClockTime current_time = gst_clock_get_time(gst_system_clock_obtain());
+    GST_BUFFER_PTS(buf) = current_time;
     GST_BUFFER_DTS(buf) = GST_BUFFER_PTS(buf);
-    GST_BUFFER_DURATION(buf) = GST_MSECOND * 33;
+    GST_BUFFER_DURATION(buf) = gst_util_uint64_scale_int(1, GST_SECOND, mpInputDataFPS);
 
     gst_buffer_unmap(buf, &map);
 
     GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(mpAppsrc), buf);
     if (ret != GST_FLOW_OK) {
         RCLCPP_ERROR(mpLogger, "Failed to push buffer: %s", gst_flow_get_name(ret));
+        gst_buffer_unref(buf);  
         return;
     }
 
     try {
         cv::imshow("Video Logger Output", display_image);
-        cv::waitKey(1);  // Brief wait to allow display to update
+        cv::waitKey(30);  
     } catch (const cv::Exception& e) {
         RCLCPP_WARN_ONCE(mpLogger, "Display error: %s", e.what());
     }
@@ -167,8 +167,6 @@ CallbackReturn VideoLoggerNode::on_configure(const rclcpp_lifecycle::State &){
 	mpInputDataFPS = this->get_parameter("fps").as_int();
 	mpTopicName = this->get_parameter("camera_topic").as_string();
 	mpImageType = this->get_parameter("image_type").as_string();
-
-	RCLCPP_INFO(this->get_logger(), "Set Video Logger Parameters");
 	if(mpImageType.compare("bgr") == 0){
 		mpNumChannels = 3;	
 	}
