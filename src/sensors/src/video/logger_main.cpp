@@ -9,11 +9,6 @@ int main(int argc, char **argv) {
 
     node->configure();
     node->activate();
-    // node->deactivate();
-    // node->cleanup();
-    // node->shutdown();
-
     executor.spin();
-    rclcpp::shutdown();
     return 0;
 }

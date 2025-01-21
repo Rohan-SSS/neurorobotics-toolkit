@@ -11,7 +11,7 @@ def generate_launch_description():
             output='screen',
             namespace='/',
             name='video_logger',
-            respawn=True,
+            respawn=False,
             arguments=['--ros-args', '--log-level', logger],
             parameters = [{
                 'output_file_path': '/ws/data/output.mp4',
@@ -28,7 +28,7 @@ def generate_launch_description():
             output='screen',
             namespace='/',
             name='video_reader',
-            respawn=True,
+            respawn=False,
             arguments=['--ros-args', '--log-level', logger],
             parameters = [{
                 'camera_topic' : "/camera",
