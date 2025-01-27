@@ -1,7 +1,7 @@
 #include "sensors/video/logger.h"
 
-VideoLogger::VideoLogger(rclcpp::Logger logger, std::string &outputPath, VideoProperties &props)
-    : mpLogger(logger){ 
+VideoLogger::VideoLogger(rclcpp::Logger logger, std::string &outputPath, VideoProperties &props):
+mpLogger(logger){ 
     mpOutputFilePath = outputPath;
     mpOutputImageWidth = props.mWidth;
     mpOutputImageHeight = props.mHeight;

@@ -1,11 +1,10 @@
 #include "sensors/video/reader.h"
 
-VideoReader::VideoReader(rclcpp::Logger logger, const std::string& inputFilePath, std::function<void(std::shared_ptr<Frame>)> cb)
-    : 
-    mpLogger(logger), inputFilePath(inputFilePath), mpFrameCallback(cb), mpPipeline(nullptr),
-    mpFilesrc(nullptr), mpDemuxer(nullptr), mpQueue(nullptr), mpH264Parser(nullptr),
-    mpH264Decoder(nullptr), mpVideoconvert(nullptr), mpCapsfilter(nullptr), mpAppsink(nullptr),
-    loop(nullptr) {
+VideoReader::VideoReader(rclcpp::Logger logger, const std::string& mpInputFilePath, std::function<void(std::shared_ptr<Frame>)> cb):
+mpLogger(logger), mpInputFilePath(mpInputFilePath), mpFrameCallback(cb), mpPipeline(nullptr),
+mpFilesrc(nullptr), mpDemuxer(nullptr), mpQueue(nullptr), mpH264Parser(nullptr),
+mpH264Decoder(nullptr), mpVideoconvert(nullptr), mpCapsfilter(nullptr), mpAppsink(nullptr),
+loop(nullptr) {
 
     gst_init(nullptr, nullptr);
 
@@ -29,7 +28,7 @@ VideoReader::VideoReader(rclcpp::Logger logger, const std::string& inputFilePath
     check_element_creation(mpCapsfilter, "capsfilter");
     check_element_creation(mpAppsink, "appsink");
 
-    g_object_set(mpFilesrc, "location", inputFilePath.c_str(), NULL);
+    g_object_set(mpFilesrc, "location", mpInputFilePath.c_str(), NULL);
     g_object_set(mpAppsink, "emit-signals", TRUE, "sync", TRUE, "max-lateness", 50 * GST_MSECOND, "qos", TRUE, NULL);
 
     GstCaps *caps = gst_caps_new_simple("video/x-raw",
