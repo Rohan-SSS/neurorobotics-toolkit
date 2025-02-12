@@ -16,6 +16,7 @@ mpLogger(logger){
     mpAppsrc = gst_element_factory_make("appsrc", "mysource");
     mpVideoconvert = gst_element_factory_make("videoconvert", "myconvert");
     mpX264enc = gst_element_factory_make("x264enc", "myencoder");
+	mpH264Parser = gst_element_factory_make("h264parse", "parser");
     mpMp4mux = gst_element_factory_make("mp4mux", "mymux");
     mpFilesink = gst_element_factory_make("filesink", "myfileoutput");
 
@@ -23,10 +24,11 @@ mpLogger(logger){
     check_element_creation(mpAppsrc, "appsrc");
     check_element_creation(mpVideoconvert, "videoconvert");
     check_element_creation(mpX264enc, "x264encoder");
+	check_element_creation(mpH264Parser, "parser");
     check_element_creation(mpMp4mux, "mp4muxer");
     check_element_creation(mpFilesink, "filesink");
 
-    if (!mpPipeline || !mpAppsrc || !mpVideoconvert || !mpX264enc || !mpMp4mux || !mpFilesink) {
+    if (!mpPipeline || !mpAppsrc || !mpVideoconvert || !mpX264enc || !mpH264Parser || !mpMp4mux || !mpFilesink) {
         RCLCPP_ERROR(mpLogger, "Not all elements could be created.");
         mpVideoLoggerStatus = -1;
         return;
@@ -48,13 +50,17 @@ mpLogger(logger){
         "key-int-max", 30,   // Keyframe every 30 frames
         NULL);
 
+	g_object_set(G_OBJECT(mpH264Parser),
+		"config-interval", 1,
+		NULL);
+
     // Set output file
     g_object_set(mpFilesink, "location", mpOutputFilePath.c_str(), NULL);
 
     // Add elements to pipeline
-    gst_bin_add_many(GST_BIN(mpPipeline), mpAppsrc, mpVideoconvert, mpX264enc, mpMp4mux, mpFilesink, NULL);
+    gst_bin_add_many(GST_BIN(mpPipeline), mpAppsrc, mpVideoconvert, mpX264enc, mpH264Parser, mpMp4mux, mpFilesink, NULL);
     
-    if (!gst_element_link_many(mpAppsrc, mpVideoconvert, mpX264enc, mpMp4mux, mpFilesink, NULL)) {
+    if (!gst_element_link_many(mpAppsrc, mpVideoconvert, mpX264enc, mpH264Parser, mpMp4mux, mpFilesink, NULL)) {
         RCLCPP_ERROR(mpLogger, "Elements could not be linked");
         mpVideoLoggerStatus = -1;
         return;

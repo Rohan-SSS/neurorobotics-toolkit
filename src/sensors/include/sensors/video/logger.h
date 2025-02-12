@@ -17,6 +17,7 @@ class VideoLogger{
 		GstElement* mpAppsrc;
 		GstElement* mpVideoconvert;
 		GstElement* mpX264enc;
+		GstElement* mpH264Parser;
 		GstElement* mpMp4mux;
 		GstElement* mpFilesink;
 		GstMapInfo mpMap;

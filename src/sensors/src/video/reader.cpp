@@ -26,6 +26,8 @@ loop(nullptr) {
     check_element_creation(mpH264Decoder, "avdec_h264");
     check_element_creation(mpVideoconvert, "videoconvert");
     check_element_creation(mpCapsfilter, "capsfilter");
+	// TODO add the following video rate limiter:
+	// https://stackoverflow.com/a/42252285/9090538
     check_element_creation(mpAppsink, "appsink");
 
     g_object_set(mpFilesrc, "location", mpInputFilePath.c_str(), NULL);
