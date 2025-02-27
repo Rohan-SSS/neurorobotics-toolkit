@@ -14,6 +14,9 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(OpenCV 4.2 REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(tello_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 # Command to check gstreamer dependencies
 pkg_check_modules(GST REQUIRED gstreamer-1.0 gstreamer-video-1.0  gstreamer-app-1.0)
 
@@ -29,6 +32,9 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 	cv_bridge
 	image_transport
 	std_msgs
+	tello_msgs
+	lifecycle_msgs
+	rclcpp_lifecycle
 )
 
 add_executable(video_logger_node
@@ -36,16 +42,27 @@ add_executable(video_logger_node
 	src/video/logger.cpp
 	src/video/common.cpp
 )
+
 add_executable(video_reader_node
 	src/video/reader_main.cpp
 	src/video/reader.cpp
 	src/video/common.cpp
 )
 
+add_executable(tello_controller_node
+	src/tello_controller/tello_controller.cpp
+	src/tello_controller/tello_controller_main.cpp
+)
+
+
 ament_target_dependencies(video_logger_node
 	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_target_dependencies(video_reader_node
+	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+
+ament_target_dependencies(tello_controller_node
 	PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
@@ -75,6 +92,12 @@ install(TARGETS video_reader_node
 	INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
+install(TARGETS tello_controller_node
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION lib/${PROJECT_NAME}
+    INCLUDES DESTINATION include/${PROJECT_NAME}
+)
 install(DIRECTORY
 	launch
 	DESTINATION share/${PROJECT_NAME}/
