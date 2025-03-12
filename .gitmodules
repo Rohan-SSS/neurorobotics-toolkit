@@ -20,3 +20,6 @@
 [submodule "src/flight_matrix_bridge"]
 	path = src/flight_matrix_bridge
 	url = git@github.com:Kawai-Senpai/Ros-flightmatrixbridge.git
+[submodule "src/image_pipeline"]
+	path = src/image_pipeline
+	url = https://github.com/Modular-Autonomous-Robotics-Systems/image_pipeline
