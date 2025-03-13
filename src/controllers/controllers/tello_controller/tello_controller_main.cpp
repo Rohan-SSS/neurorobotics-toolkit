@@ -1,4 +1,4 @@
-#include <sensors/tello_controller/controller.h>
+#include <tello_controller/controller.h>
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);

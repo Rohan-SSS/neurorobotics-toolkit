@@ -6,7 +6,7 @@ def generate_launch_description():
     return LaunchDescription([
         # TelloControllerNode with remapped topics
         Node(
-            package="sensors",
+            package="controllers",
             executable="tello_controller_node",
             name="tello_controller",
             namespace=ns,
@@ -29,7 +29,7 @@ def generate_launch_description():
             output='screen',
 
         ),
-        ###
+        
          Node(
              package='tello_driver',
              executable='tello_driver_main',

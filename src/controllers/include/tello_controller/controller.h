@@ -38,19 +38,15 @@ class TelloControllerNode: public rclcpp::Node{
                 
 
                 std::string mpTelloFlightState = "landed"; 
-                //timer
 
-                std::chrono::steady_clock::time_point mpLastImageTime;
-
-                std::chrono::steady_clock::time_point mpLastCamInfoTime;
-                
                 //flags
+
                 bool mpReadyTakeOff = false;
 
-                
                 bool mplowBattery = false;
 
                 //frequency off data
+
                 double mpImageFreq = 0.0;
                 
                 double mpCameraInfoFreq = 0.0;
@@ -76,4 +72,12 @@ class TelloControllerNode: public rclcpp::Node{
                 //ros2 timer
                 rclcpp::TimerBase::SharedPtr mpFlightChecker;
 
+                rclcpp::Clock::SharedPtr mpClock;
+
+                int32_t mpLastImageTime = 0;
+
+                int32_t mpLastCamInfoTime = 0;
+                
+ 
+                
 };

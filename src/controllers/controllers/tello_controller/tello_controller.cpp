@@ -1,13 +1,13 @@
-#include <sensors/tello_controller/controller.h>
+#include <tello_controller/controller.h>
+
 using namespace std::chrono_literals;
+
 TelloControllerNode::TelloControllerNode(std::string nodeName):Node(nodeName){
     //initialize time keeper
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Starting node...");
-
-    mpLastImageTime = std::chrono::steady_clock::now();
-
-    mpLastCamInfoTime = std::chrono::steady_clock::now();
+    
+    mpClock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
 
     //subsription
     mpFlightDataSubsriber = this->create_subscription<tello_msgs::msg::FlightData>(
@@ -74,22 +74,23 @@ void TelloControllerNode::timer_callback(){
         }
     }
 }
+
 void TelloControllerNode::FlightDataCallback(const tello_msgs::msg::FlightData::ConstSharedPtr &flightData){
 
+    //will be utilized more when moving into autonomous solution
     //check if flight data empty
-    //
+
 
     if(!flightData){
         RCLCPP_ERROR(this->get_logger(), ("Got empty Flight data"));
         return;
     }
-
     // TODO
-    // more failsafe condition 
+    // more failsafe condition, where we force emergency landing if condition are met
+
     if(flightData->bat<10){
         ActionRequestSender("land");
     }
-    //RCLCPP_INFO(this->get_logger(), "flight data recieved");
 
 }
 
@@ -103,18 +104,18 @@ void TelloControllerNode::ImageCallback(const sensor_msgs::msg::Image::ConstShar
 
     }
 
-        auto current = std::chrono::steady_clock::now();
-        
-        std::chrono::duration<double> diff = current - mpLastImageTime;
+        int32_t current_time = img->header.stamp.nanosec;
 
-        mpImageFreq = 1.0 / diff.count();
+        float diff = current_time - mpLastImageTime;
 
-        mpLastImageTime = current;
+        mpImageFreq = 1000000000.0 / diff;
 
-        //RCLCPP_INFO(this->get_logger(), "Image recieved frequency: %.2f Hz", mpImageFreq);
-    
+        mpLastImageTime = current_time;
+
+        RCLCPP_INFO(this->get_logger(), "Image recieved frequency: %.2f Hz", mpImageFreq);
 }
 
+//use image timestamp header instead of timer
 void TelloControllerNode::CameraInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr &camInfo){
 
     if(!camInfo){
@@ -123,17 +124,19 @@ void TelloControllerNode::CameraInfoCallback(const sensor_msgs::msg::CameraInfo:
         return;
     }
 
-        auto current = std::chrono::steady_clock::now();
+        auto current = camInfo->header.stamp.nanosec;
 
-        std::chrono::duration<double> diff = current - mpLastCamInfoTime;
+        float diff = current - mpLastCamInfoTime;
 
-        mpCameraInfoFreq = 1.0 / diff.count();
+        mpCameraInfoFreq = 1000000000.0 / diff;
 
         mpLastCamInfoTime = current;
 
-        //RCLCPP_INFO(this->get_logger(), "Camera info frequency: %.2f Hz", mpCameraInfoFreq);
+        RCLCPP_INFO(this->get_logger(), "Camera info frequency: %.2f Hz", mpCameraInfoFreq);
 }
+
 //this will be used for fail safe request sender
+
 void TelloControllerNode::ActionRequestSender(const std::string &cmd){
 
     auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
@@ -178,6 +181,7 @@ void TelloControllerNode::Response(const std_msgs::msg::String::ConstSharedPtr &
 
 void TelloControllerNode::changeTeleopState(const std::string state){
 
+    //
     auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
 
     //manage teleop node state
@@ -207,11 +211,21 @@ void TelloControllerNode::changeTeleopState(const std::string state){
             RCLCPP_ERROR(this->get_logger(), 
                 "Exception while processing teleop state change response: %s", e.what());
         }
-    };
 
+    };
+    
     mpTeleopLifecycleClient->async_send_request(request, response_callback);
     RCLCPP_INFO(this->get_logger(), "Sent request to change teleop state to %s", state.c_str());
 
+    //sleep to wait for callback return
+    auto start_time = mpClock->now();
+    rclcpp::Duration duration(5, 0); // 5 seconds
+
+    rclcpp::Rate rate(10); // 10 Hz loop
+
+    while ((mpClock->now() - start_time) < duration && rclcpp::ok()) {
+        rate.sleep();  // Sleeps while allowing ROS to process callbacks
+    }
 }
 
 void TelloControllerNode::TelloStateCallback(const std_msgs::msg::String::ConstSharedPtr &stateMessage){
@@ -221,4 +235,5 @@ void TelloControllerNode::TelloStateCallback(const std_msgs::msg::String::ConstS
     }
     
     mpTelloFlightState = stateMessage->data;
+
 }
